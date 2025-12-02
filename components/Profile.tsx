@@ -1,14 +1,17 @@
 
 import React, { useState } from 'react';
 import { FreelancerProfile } from '../types';
-import { Camera, Mail, MapPin, Link as LinkIcon, Save, Github } from 'lucide-react';
+import { Camera, Mail, MapPin, Link as LinkIcon, Save, Github, LogOut, Lock } from 'lucide-react';
 
 interface ProfileProps {
   profile: FreelancerProfile | null;
   onUpdate: (profile: FreelancerProfile) => void;
+  isSignedUp?: boolean;
+  onSignup?: () => void;
+  onSignOut?: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ profile, onUpdate }) => {
+const Profile: React.FC<ProfileProps> = ({ profile, onUpdate, isSignedUp = true, onSignup, onSignOut }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<FreelancerProfile>(profile || {
     name: '',
@@ -23,7 +26,30 @@ const Profile: React.FC<ProfileProps> = ({ profile, onUpdate }) => {
     portfolioUrl: ''
   });
 
-  if (!profile) return <div>Loading...</div>;
+  if (!profile) return <div className="p-8 text-slate-500 dark:text-slate-400">Loading...</div>;
+
+  // Show signup prompt if not signed up
+  if (!isSignedUp) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-12 text-center">
+          <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="text-indigo-600 dark:text-indigo-400" size={36} />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Create Your Account</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
+            Sign up to save your profile, track your progress, and access all features.
+          </p>
+          <button 
+            onClick={onSignup}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-colors"
+          >
+            Sign Up Free
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = () => {
     onUpdate(formData);
@@ -219,6 +245,18 @@ const Profile: React.FC<ProfileProps> = ({ profile, onUpdate }) => {
                     </button>
                 )}
             </div>
+          </div>
+
+          {/* Sign Out Section */}
+          <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-white mb-4">Account</h4>
+            <button 
+              onClick={onSignOut}
+              className="flex items-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-100 dark:border-red-800"
+            >
+              <LogOut size={18} />
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

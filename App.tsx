@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, FreelancerProfile, AnalysisData, RoadmapStep, Notification, UserRole } from './types';
+import { View, FreelancerProfile, AnalysisData, RoadmapStep, Notification, UserRole, Mentor } from './types';
 import { analyzeProfileWithGemini, generateRoadmapWithGemini } from './services/geminiService';
 import { INITIAL_ROADMAP } from './constants';
 import Sidebar from './components/Sidebar';
@@ -8,9 +8,11 @@ import Dashboard from './components/Dashboard';
 import Onboarding from './components/Onboarding';
 import Roadmap from './components/Roadmap';
 import Mentors from './components/Mentors';
+import MyMentor from './components/MyMentor';
 import Insights from './components/Insights';
 import PortfolioBuilder from './components/PortfolioBuilder';
 import ProposalGenerator from './components/ProposalGenerator';
+import SentimentAnalyzer from './components/SentimentAnalyzer';
 import Community from './components/Community';
 import LandingPage from './components/LandingPage';
 import Breadcrumbs from './components/Breadcrumbs';
@@ -20,8 +22,11 @@ import Profile from './components/Profile';
 import Checkout from './components/Checkout';
 import MentorDashboard from './components/MentorDashboard';
 import MentorClients from './components/MentorClients';
+import MentorSessions from './components/MentorSessions';
 import ChatSystem from './components/ChatSystem';
 import Login from './components/Login';
+import Signup from './components/Signup';
+import AIChatbot from './components/AIChatbot';
 import { Bell, Search, X } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -33,6 +38,8 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [isSignedUp, setIsSignedUp] = useState(false);
+  const [isSignupFlow, setIsSignupFlow] = useState(false); // Track if user is in signup flow (from login page)
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: '1', title: 'Analysis Complete', message: 'Your profile baseline score is ready.', time: '2m ago', read: false, type: 'success' },
@@ -45,6 +52,7 @@ const App: React.FC = () => {
     streak: 5,
     badges: ['Early Adopter']
   });
+  const [connectedMentor, setConnectedMentor] = useState<Mentor | null>(null);
 
   // Load theme from local storage
   useEffect(() => {
@@ -86,15 +94,32 @@ const App: React.FC = () => {
             setRoadmap(aiRoadmap);
         }
       }
+      
+      // If user came from signup flow (login page -> sign up), they get full access
+      if (isSignupFlow) {
+        setIsSignedUp(true);
+        setIsSignupFlow(false);
+        addNotification({
+          id: Date.now().toString(),
+          title: 'Account Created!',
+          message: 'Welcome to FairFound! You now have full access to all features.',
+          time: 'Just now',
+          read: false,
+          type: 'success'
+        });
+      } else {
+        // User came from landing page "Start Free Analysis" - preview mode
+        addNotification({
+          id: Date.now().toString(),
+          title: 'Welcome Aboard',
+          message: 'Your profile setup is complete. Sign up to unlock all features!',
+          time: 'Just now',
+          read: false,
+          type: 'success'
+        });
+      }
+      
       setCurrentView(View.DASHBOARD);
-      addNotification({
-        id: Date.now().toString(),
-        title: 'Welcome Aboard',
-        message: 'Your profile setup is complete. Check your dashboard!',
-        time: 'Just now',
-        read: false,
-        type: 'success'
-      });
     } catch (e) {
       console.error(e);
       // In a real app, show error toast
@@ -105,6 +130,7 @@ const App: React.FC = () => {
 
   const handleSimulatedLogin = () => {
     setUserRole(UserRole.FREELANCER);
+    setIsSignedUp(true);
     // Mock login data
     const mockProfile: FreelancerProfile = {
       name: "Alex Rivera",
@@ -127,6 +153,7 @@ const App: React.FC = () => {
 
   const handleMentorLogin = () => {
       setUserRole(UserRole.MENTOR);
+      setIsSignedUp(true);
       setProfile({
           name: "Elena Rostova",
           title: "Senior Product Mentor",
@@ -151,20 +178,64 @@ const App: React.FC = () => {
     setProfile(null);
     setAnalysis(null);
     setIsPro(false);
+    setIsSignedUp(false);
+    setIsSignupFlow(false);
     setUserRole(UserRole.FREELANCER);
   };
 
-  const handleProUpgrade = () => {
-    setIsPro(true);
+  const handleSignup = (username: string, password: string) => {
+    setIsSignedUp(true);
     setCurrentView(View.DASHBOARD);
     addNotification({
       id: Date.now().toString(),
-      title: 'Welcome to Pro!',
-      message: 'You have successfully upgraded to FairFound Pro. All features unlocked.',
+      title: 'Account Created!',
+      message: 'Welcome to FairFound! You now have full access to all features.',
       time: 'Just now',
       read: false,
       type: 'success'
     });
+  };
+
+  const handleProUpgrade = () => {
+    // Check if there's a pending mentor connection
+    const pendingMentorStr = localStorage.getItem('pending_mentor');
+    if (pendingMentorStr) {
+      const pendingMentor = JSON.parse(pendingMentorStr) as Mentor;
+      localStorage.removeItem('pending_mentor');
+      
+      // Save connection to local storage
+      const newConnection = {
+        mentorId: pendingMentor.id,
+        menteeName: profile?.name || 'User',
+        date: new Date().toISOString(),
+        status: 'active'
+      };
+      const existing = JSON.parse(localStorage.getItem('fairfound_connections') || '[]');
+      localStorage.setItem('fairfound_connections', JSON.stringify([...existing, newConnection]));
+      
+      setConnectedMentor(pendingMentor);
+      setIsPro(true);
+      setCurrentView(View.MY_MENTOR);
+      addNotification({
+        id: Date.now().toString(),
+        title: 'Mentor Connected!',
+        message: `Payment successful! You are now connected with ${pendingMentor.name}.`,
+        time: 'Just now',
+        read: false,
+        type: 'success'
+      });
+    } else {
+      setIsPro(true);
+      setCurrentView(View.DASHBOARD);
+      addNotification({
+        id: Date.now().toString(),
+        title: 'Payment Successful!',
+        message: 'Your payment was processed successfully.',
+        time: 'Just now',
+        read: false,
+        type: 'success'
+      });
+    }
   };
 
   const addNotification = (notif: Notification) => {
@@ -181,35 +252,77 @@ const App: React.FC = () => {
       case View.ONBOARDING:
         return <Onboarding onComplete={handleOnboardingComplete} isLoading={loading} onBack={() => setCurrentView(View.LANDING)} />;
       case View.DASHBOARD:
-        return <Dashboard analysis={analysis} gamification={gamification} isDark={isDark} onNavigate={setCurrentView} />;
+        return <Dashboard analysis={analysis} gamification={gamification} isDark={isDark} onNavigate={setCurrentView} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
       case View.ROADMAP:
-        return <Roadmap steps={roadmap} />;
+        return <Roadmap steps={roadmap} isSignedUp={isSignedUp} hasMentor={!!connectedMentor} onSignup={() => setCurrentView(View.SIGNUP)} onFindMentor={() => setCurrentView(View.MENTORS)} />;
       case View.INSIGHTS:
-        return analysis ? <Insights analysis={analysis} isPro={isPro} onUpgrade={() => setCurrentView(View.PRICING)} /> : <div>No analysis available</div>;
+        return analysis ? <Insights analysis={analysis} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} /> : <div>No analysis available</div>;
       case View.MENTORS:
-        return <Mentors isPro={isPro} onUpgrade={() => setCurrentView(View.PRICING)}/>;
+        return <Mentors 
+          isSignedUp={isSignedUp} 
+          onSignup={() => setCurrentView(View.SIGNUP)} 
+          connectedMentor={connectedMentor}
+          onViewMentor={() => setCurrentView(View.MY_MENTOR)}
+          onCancelContract={() => {
+            setConnectedMentor(null);
+            setIsPro(false); // Lose pro features when mentor cancelled
+            addNotification({
+              id: Date.now().toString(),
+              title: 'Contract Cancelled',
+              message: 'Your mentorship has been cancelled. You can now connect with a new mentor.',
+              time: 'Just now',
+              read: false,
+              type: 'info'
+            });
+          }}
+          onPaymentRequired={(mentor) => {
+            // Store selected mentor for after payment
+            localStorage.setItem('pending_mentor', JSON.stringify(mentor));
+            setCurrentView(View.CHECKOUT);
+          }}
+        />;
+      case View.MY_MENTOR:
+        return <MyMentor 
+          mentor={connectedMentor} 
+          onCancelContract={() => {
+            setConnectedMentor(null);
+            setCurrentView(View.MENTORS);
+            addNotification({
+              id: Date.now().toString(),
+              title: 'Contract Cancelled',
+              message: 'Your mentorship has been cancelled. You can now connect with a new mentor.',
+              time: 'Just now',
+              read: false,
+              type: 'info'
+            });
+          }}
+        />;
       case View.PORTFOLIO:
-        return <PortfolioBuilder profile={profile} />;
+        return <PortfolioBuilder profile={profile} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
       case View.PROPOSALS:
-        return <ProposalGenerator profile={profile} />;
+        return <ProposalGenerator profile={profile} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
+      case View.SENTIMENT:
+        return <SentimentAnalyzer isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
       case View.COMMUNITY:
-        return <Community />;
+        return <Community isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
       case View.PRICING:
         return <Pricing onUpgrade={() => setCurrentView(View.CHECKOUT)} isPro={isPro} onNavigate={setCurrentView} />;
       case View.CHECKOUT:
         return <Checkout onComplete={handleProUpgrade} onCancel={() => setCurrentView(View.PRICING)} />;
       case View.PROFILE:
-        return <Profile profile={profile} onUpdate={setProfile} />;
+        return <Profile profile={profile} onUpdate={setProfile} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} onSignOut={handleSignOut} />;
       
       // MENTOR VIEWS
       case View.MENTOR_DASHBOARD:
           return <MentorDashboard onNavigate={setCurrentView} />;
       case View.MENTOR_CLIENTS:
           return <MentorClients />;
+      case View.MENTOR_SESSIONS:
+          return <MentorSessions />;
       case View.MENTOR_CHAT:
           return <ChatSystem currentUser={{id: 'me', name: profile?.name || 'Mentor'}} role={UserRole.MENTOR} />;
       case View.MENTOR_PROFILE:
-          return <Profile profile={profile} onUpdate={setProfile} />;
+          return <Profile profile={profile} onUpdate={setProfile} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} onSignOut={handleSignOut} />;
 
       default:
         return <div className="p-8 dark:text-slate-400">Coming Soon</div>;
@@ -237,7 +350,20 @@ const App: React.FC = () => {
       <Login 
         onLogin={handleAuth} 
         onBack={() => setCurrentView(View.LANDING)}
-        onSignUp={() => setCurrentView(View.ONBOARDING)}
+        onSignUp={() => {
+          setIsSignupFlow(true); // Mark as signup flow for full access after onboarding
+          setCurrentView(View.ONBOARDING);
+        }}
+      />
+    );
+  }
+
+  if (currentView === View.SIGNUP) {
+    return (
+      <Signup 
+        profile={profile}
+        onSignup={handleSignup}
+        onBack={() => setCurrentView(View.DASHBOARD)}
       />
     );
   }
@@ -353,6 +479,13 @@ const App: React.FC = () => {
           {renderContent()}
         </div>
       </main>
+
+      {/* AI Chatbot - Only for freelancers */}
+      {userRole === UserRole.FREELANCER && (
+        <AIChatbot 
+          pageContext={`Current page: ${currentView}. User: ${profile?.name || 'Guest'}. Role: ${userRole}. Skills: ${profile?.skills?.join(', ') || 'Not set'}. Has mentor: ${!!connectedMentor}. Is Pro: ${isPro}.`}
+        />
+      )}
     </div>
   );
 };

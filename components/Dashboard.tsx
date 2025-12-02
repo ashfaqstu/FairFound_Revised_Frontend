@@ -1,21 +1,91 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { AnalysisData, GamificationState, View } from '../types';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip
 } from 'recharts';
-import { Trophy, TrendingUp, Target, DollarSign, Activity, Star, FileText, CheckCircle2 } from 'lucide-react';
+import { Trophy, TrendingUp, Target, DollarSign, Activity, Star, FileText, CheckCircle2, Lock, RefreshCw, Upload, Github, Globe, X, Loader2, CheckCircle } from 'lucide-react';
 
 interface DashboardProps {
   analysis: AnalysisData | null;
   gamification: GamificationState;
   isDark: boolean;
   onNavigate: (view: View) => void;
+  isSignedUp?: boolean;
+  onSignup?: () => void;
+  onReEvaluate?: (data: { cv?: File; githubUrl?: string; portfolioUrl?: string }) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, onNavigate, isSignedUp = true, onSignup, onReEvaluate }) => {
+  const [showReEvalModal, setShowReEvalModal] = useState(false);
+  const [reEvalStep, setReEvalStep] = useState<'form' | 'loading' | 'success'>('form');
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [githubUrl, setGithubUrl] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setCvFile(e.target.files[0]);
+    }
+  };
+
+  const handleReEvaluate = () => {
+    setReEvalStep('loading');
+    
+    // Simulate re-evaluation process
+    setTimeout(() => {
+      setReEvalStep('success');
+      if (onReEvaluate) {
+        onReEvaluate({ 
+          cv: cvFile || undefined, 
+          githubUrl: githubUrl || undefined, 
+          portfolioUrl: portfolioUrl || undefined 
+        });
+      }
+      
+      // Close modal after success
+      setTimeout(() => {
+        setShowReEvalModal(false);
+        setReEvalStep('form');
+        setCvFile(null);
+        setGithubUrl('');
+        setPortfolioUrl('');
+      }, 2000);
+    }, 3000);
+  };
+
   if (!analysis) return <div className="p-8 text-center text-slate-500 dark:text-slate-400">Loading analysis...</div>;
+
+  // Locked section wrapper for non-signed-up users
+  const LockedSection: React.FC<{ children: React.ReactNode; title?: string }> = ({ children, title }) => {
+    if (isSignedUp) return <>{children}</>;
+    
+    return (
+      <div className="relative">
+        <div className="blur-sm pointer-events-none select-none">
+          {children}
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-slate-900/60 rounded-2xl">
+          <div className="text-center p-6">
+            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Lock className="text-indigo-600 dark:text-indigo-400" size={20} />
+            </div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+              {title || 'Sign up to unlock'}
+            </p>
+            <button 
+              onClick={onSignup}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            >
+              Sign Up Free
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const radarData = [
     { subject: 'Portfolio', A: analysis.metrics.portfolioScore, fullMark: 100 },
@@ -39,6 +109,19 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
+      {/* Re-Evaluation Button */}
+      {isSignedUp && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowReEvalModal(true)}
+            className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors flex items-center gap-2 border border-indigo-200 dark:border-indigo-800"
+          >
+            <RefreshCw size={18} />
+            Re-Evaluate Profile
+          </button>
+        </div>
+      )}
+
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
@@ -105,80 +188,84 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
       {/* Main Charts Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Radar Chart - Skill Analysis */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-1">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-                <Target size={20} className="text-indigo-500 dark:text-indigo-400"/>
-                Competency Matrix
-            </h3>
-            <div className="h-[300px] w-full flex justify-center items-center">
-                <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                        <PolarGrid stroke={radarGridColor} />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: chartTextColor, fontSize: 12 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                        <Radar
-                            name="You"
-                            dataKey="A"
-                            stroke="#6366f1"
-                            strokeWidth={2}
-                            fill="#6366f1"
-                            fillOpacity={isDark ? 0.3 : 0.4}
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            borderRadius: '8px', 
-                            border: 'none', 
-                            backgroundColor: isDark ? '#1e293b' : '#fff',
-                            color: isDark ? '#fff' : '#0f172a',
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
-                          }}
-                        />
-                    </RadarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
+        <LockedSection title="Unlock your competency analysis">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-1">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                  <Target size={20} className="text-indigo-500 dark:text-indigo-400"/>
+                  Competency Matrix
+              </h3>
+              <div className="h-[300px] w-full flex justify-center items-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                          <PolarGrid stroke={radarGridColor} />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: chartTextColor, fontSize: 12 }} />
+                          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                          <Radar
+                              name="You"
+                              dataKey="A"
+                              stroke="#6366f1"
+                              strokeWidth={2}
+                              fill="#6366f1"
+                              fillOpacity={isDark ? 0.3 : 0.4}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              borderRadius: '8px', 
+                              border: 'none', 
+                              backgroundColor: isDark ? '#1e293b' : '#fff',
+                              color: isDark ? '#fff' : '#0f172a',
+                              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                            }}
+                          />
+                      </RadarChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+        </LockedSection>
 
         {/* Line Chart - Growth */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-2">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                    <TrendingUp size={20} className="text-emerald-500 dark:text-emerald-400"/>
-                    Growth Trajectory
-                </h3>
-                <select className="text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1 text-slate-600 dark:text-slate-300 outline-none">
-                    <option>Last 30 Days</option>
-                    <option>Last 3 Months</option>
-                </select>
-            </div>
-            <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                        data={growthData}
-                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                    >
-                        <defs>
-                            <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: chartTextColor, fontSize: 12}} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fill: chartTextColor, fontSize: 12}} />
-                        <Tooltip 
-                             contentStyle={{ 
-                                borderRadius: '8px', 
-                                border: 'none', 
-                                backgroundColor: isDark ? '#1e293b' : '#fff',
-                                color: isDark ? '#fff' : '#0f172a',
-                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
-                             }}
-                        />
-                        <Area type="monotone" dataKey="score" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
-                    </AreaChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
+        <LockedSection title="Unlock your growth insights">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-2">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <TrendingUp size={20} className="text-emerald-500 dark:text-emerald-400"/>
+                      Growth Trajectory
+                  </h3>
+                  <select className="text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1 text-slate-600 dark:text-slate-300 outline-none">
+                      <option>Last 30 Days</option>
+                      <option>Last 3 Months</option>
+                  </select>
+              </div>
+              <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                          data={growthData}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                          <defs>
+                              <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                              </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: chartTextColor, fontSize: 12}} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{fill: chartTextColor, fontSize: 12}} />
+                          <Tooltip 
+                               contentStyle={{ 
+                                  borderRadius: '8px', 
+                                  border: 'none', 
+                                  backgroundColor: isDark ? '#1e293b' : '#fff',
+                                  color: isDark ? '#fff' : '#0f172a',
+                                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                               }}
+                          />
+                          <Area type="monotone" dataKey="score" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+                      </AreaChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+        </LockedSection>
       </div>
 
        {/* Weekly Report Card */}
@@ -222,39 +309,210 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
 
       {/* Quick Recommendations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
-            <div className="relative z-10">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                    <Target size={18} className="text-indigo-500 dark:text-indigo-400" />
-                    Priority Skill Gap: {analysis.skillGaps[0]}
-                </h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
-                   Based on recent job postings in your niche, mastering this skill could increase your profile visibility by 35%.
-                </p>
-                <button 
-                  onClick={() => onNavigate(View.ROADMAP)}
-                  className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
-                >
-                    Add to Roadmap <TrendingUp size={14} />
-                </button>
-            </div>
-        </div>
+        <LockedSection title="Unlock skill gap analysis">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
+              <div className="relative z-10">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                      <Target size={18} className="text-indigo-500 dark:text-indigo-400" />
+                      Priority Skill Gap: {analysis.skillGaps[0]}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
+                     Based on recent job postings in your niche, mastering this skill could increase your profile visibility by 35%.
+                  </p>
+                  <button 
+                    onClick={() => onNavigate(View.ROADMAP)}
+                    className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
+                  >
+                      Add to Roadmap <TrendingUp size={14} />
+                  </button>
+              </div>
+          </div>
+        </LockedSection>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
-             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400" />
-                Immediate Actions
-             </h3>
-             <ul className="space-y-3">
-                {analysis.weaknesses.slice(0, 3).map((weakness, i) => (
-                    <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
-                        <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
-                        {weakness}
-                    </li>
-                ))}
-             </ul>
-        </div>
+        <LockedSection title="Unlock action items">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                  <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400" />
+                  Immediate Actions
+               </h3>
+               <ul className="space-y-3">
+                  {analysis.weaknesses.slice(0, 3).map((weakness, i) => (
+                      <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
+                          <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
+                          {weakness}
+                      </li>
+                  ))}
+               </ul>
+          </div>
+        </LockedSection>
       </div>
+
+      {/* Sign up CTA for non-signed-up users */}
+      {!isSignedUp && (
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white text-center">
+          <h3 className="text-2xl font-bold mb-2">Ready to unlock your full potential?</h3>
+          <p className="text-indigo-100 mb-6 max-w-xl mx-auto">
+            Sign up now to access your complete analysis, personalized roadmap, mentor matching, and all premium features.
+          </p>
+          <button 
+            onClick={onSignup}
+            className="bg-white text-indigo-700 px-8 py-3 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-lg"
+          >
+            Sign Up Free — Unlock Everything
+          </button>
+        </div>
+      )}
+
+      {/* Re-Evaluation Modal */}
+      {showReEvalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20">
+              <div className="flex items-center gap-2">
+                <RefreshCw size={20} className="text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white">Re-Evaluate Your Profile</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowReEvalModal(false);
+                  setReEvalStep('form');
+                  setCvFile(null);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {reEvalStep === 'form' && (
+                <>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                    Update your CV, GitHub, or portfolio URL to get a fresh analysis of your freelance readiness.
+                  </p>
+
+                  {/* CV Upload */}
+                  <div className="mb-5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Upload New CV (PDF, DOC)
+                    </label>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                    />
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                        cvFile 
+                          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20' 
+                          : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700'
+                      }`}
+                    >
+                      {cvFile ? (
+                        <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle size={20} />
+                          <span className="font-medium">{cvFile.name}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload size={24} className="mx-auto mb-2 text-slate-400" />
+                          <p className="text-sm text-slate-500 dark:text-slate-400">Click to upload or drag and drop</p>
+                          <p className="text-xs text-slate-400 mt-1">PDF, DOC up to 10MB</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* GitHub URL */}
+                  <div className="mb-5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      GitHub Profile URL
+                    </label>
+                    <div className="relative">
+                      <Github size={18} className="absolute left-3 top-3 text-slate-400" />
+                      <input
+                        type="url"
+                        value={githubUrl}
+                        onChange={(e) => setGithubUrl(e.target.value)}
+                        placeholder="https://github.com/yourusername"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Portfolio URL */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Portfolio Website URL
+                    </label>
+                    <div className="relative">
+                      <Globe size={18} className="absolute left-3 top-3 text-slate-400" />
+                      <input
+                        type="url"
+                        value={portfolioUrl}
+                        onChange={(e) => setPortfolioUrl(e.target.value)}
+                        placeholder="https://yourportfolio.com"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg mb-6">
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      <strong>Note:</strong> Re-evaluation will update your Global Readiness Score, skill gaps, and recommendations based on the new data.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleReEvaluate}
+                    disabled={!cvFile && !githubUrl && !portfolioUrl}
+                    className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw size={18} />
+                    Start Re-Evaluation
+                  </button>
+                </>
+              )}
+
+              {reEvalStep === 'loading' && (
+                <div className="py-12 text-center">
+                  <Loader2 size={48} className="mx-auto mb-4 text-indigo-600 dark:text-indigo-400 animate-spin" />
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Analyzing Your Profile...</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    We're scanning your CV, GitHub repos, and portfolio to generate updated insights.
+                  </p>
+                  <div className="mt-6 space-y-2 text-left max-w-xs mx-auto">
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <CheckCircle size={16} className="text-emerald-500" /> Parsing CV content
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <Loader2 size={16} className="text-indigo-500 animate-spin" /> Analyzing GitHub activity
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-300"></div> Evaluating portfolio
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {reEvalStep === 'success' && (
+                <div className="py-12 text-center">
+                  <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={32} className="text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Re-Evaluation Complete!</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Your profile has been updated with the latest analysis. Check your new scores!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

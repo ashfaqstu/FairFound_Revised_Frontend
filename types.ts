@@ -2,13 +2,16 @@
 export enum View {
   LANDING = 'LANDING',
   LOGIN = 'LOGIN',
+  SIGNUP = 'SIGNUP',
   ONBOARDING = 'ONBOARDING',
   DASHBOARD = 'DASHBOARD',
   ROADMAP = 'ROADMAP',
   MENTORS = 'MENTORS',
+  MY_MENTOR = 'MY_MENTOR', // Freelancer's connected mentor page
   INSIGHTS = 'INSIGHTS',
   PORTFOLIO = 'PORTFOLIO',
   PROPOSALS = 'PROPOSALS',
+  SENTIMENT = 'SENTIMENT', // Sentiment Analysis Tool
   COMMUNITY = 'COMMUNITY',
   PRICING = 'PRICING',
   PROFILE = 'PROFILE',
@@ -17,6 +20,7 @@ export enum View {
   MENTOR_DASHBOARD = 'MENTOR_DASHBOARD',
   MENTOR_CLIENTS = 'MENTOR_CLIENTS',
   MENTOR_CHAT = 'MENTOR_CHAT',
+  MENTOR_SESSIONS = 'MENTOR_SESSIONS',
   MENTOR_PROFILE = 'MENTOR_PROFILE'
 }
 
@@ -66,6 +70,15 @@ export interface AnalysisData {
   };
 }
 
+export interface RoadmapTask {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  dueDate?: string;
+  resources?: string[];
+}
+
 export interface RoadmapStep {
   id: string;
   title: string;
@@ -73,6 +86,9 @@ export interface RoadmapStep {
   duration: string;
   status: 'pending' | 'in-progress' | 'completed';
   type: 'skill' | 'project' | 'branding';
+  tasks?: RoadmapTask[]; // Tasks for pro mode
+  mentorApproved?: boolean; // Whether a mentor has approved this step
+  mentorNotes?: string; // Notes from mentor
 }
 
 export interface Mentor {
@@ -113,12 +129,23 @@ export interface Notification {
   type: 'info' | 'success' | 'warning';
 }
 
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  type: 'file' | 'image' | 'voice';
+  url: string;
+  size?: string;
+  duration?: string; // For voice messages
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;
   text: string;
   timestamp: string;
   isMe: boolean;
+  attachments?: ChatAttachment[];
+  isVoice?: boolean;
 }
 
 export interface Chat {
@@ -141,6 +168,7 @@ export interface Task {
   dueDate: string;
   status: 'pending' | 'review' | 'completed';
   feedback?: string;
+  stepId?: string; // Parent roadmap step this task belongs to
 }
 
 export interface Mentee {
@@ -153,4 +181,45 @@ export interface Mentee {
   status: 'active' | 'paused';
   roadmap: RoadmapStep[];
   tasks: Task[];
+}
+
+// Session Booking Types
+export interface TimeSlot {
+  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  startTime: string; // e.g., "09:00"
+  endTime: string; // e.g., "17:00"
+}
+
+export interface MentorAvailability {
+  slots: TimeSlot[];
+  sessionDuration: number; // in minutes (30, 45, 60)
+  timezone: string;
+}
+
+export interface Session {
+  id: string;
+  menteeId: string;
+  menteeName: string;
+  menteeAvatar: string;
+  mentorId: string;
+  date: string; // ISO date string
+  time: string; // e.g., "14:00"
+  duration: number; // in minutes
+  topic: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
+  notes?: string;
+  meetingLink?: string;
+}
+
+// Mentor Review Types
+export interface MentorReview {
+  id: string;
+  mentorId: string;
+  reviewerId: string;
+  reviewerName: string;
+  reviewerAvatar: string;
+  rating: number; // 1-5 stars
+  comment: string;
+  date: string;
+  helpful: number; // Number of people who found this helpful
 }
