@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, UserRole } from '../types';
-import { LayoutDashboard, Map, Users, Lightbulb, LogOut, Briefcase, FileText, Globe, User, CreditCard, MessageSquare, Briefcase as BriefcaseIcon } from 'lucide-react';
+import { LayoutDashboard, Map, Users, Lightbulb, LogOut, Briefcase, FileText, Globe, User, CreditCard, MessageSquare, UserCheck, Calendar, BarChart3 } from 'lucide-react';
 
 interface SidebarProps {
   currentView: View;
@@ -18,14 +18,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, use
     { id: View.ROADMAP, label: 'My Roadmap', icon: Map },
     { id: View.PORTFOLIO, label: 'Portfolio Builder', icon: Globe },
     { id: View.PROPOSALS, label: 'Proposal Writer', icon: FileText },
+    { id: View.SENTIMENT, label: 'Sentiment Analysis', icon: BarChart3 },
     { id: View.COMMUNITY, label: 'Community', icon: Users },
     { id: View.MENTORS, label: 'Find Mentors', icon: Briefcase },
+    { id: View.MY_MENTOR, label: 'My Mentor', icon: UserCheck },
     { id: View.PROFILE, label: 'My Profile', icon: User },
   ];
 
   const mentorItems = [
       { id: View.MENTOR_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
       { id: View.MENTOR_CLIENTS, label: 'My Mentees', icon: Users },
+      { id: View.MENTOR_SESSIONS, label: 'Sessions', icon: Calendar },
       { id: View.MENTOR_CHAT, label: 'Messages', icon: MessageSquare },
       { id: View.MENTOR_PROFILE, label: 'Mentor Profile', icon: User },
   ];
@@ -39,9 +42,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, use
           className="flex items-center gap-2 mb-8 cursor-pointer"
           onClick={() => onChangeView(userRole === UserRole.MENTOR ? View.MENTOR_DASHBOARD : View.DASHBOARD)}
         >
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <span className="text-white font-bold text-xl">F</span>
-          </div>
+          <img 
+            src="/images/icon48.png" 
+            alt="FairFound Logo" 
+            className="w-8 h-8"
+          />
           <div className="flex flex-col">
             <span className="text-xl font-bold text-white tracking-tight leading-none">FairFound</span>
             {userRole === UserRole.MENTOR && <span className="text-[10px] text-slate-400 font-medium tracking-wider uppercase mt-1">Mentor</span>}
@@ -72,28 +77,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, use
       </nav>
 
       <div className="p-4 border-t border-slate-800 mt-auto">
-        {userRole === UserRole.FREELANCER && !isPro ? (
-          <div className="p-4 bg-slate-800/50 rounded-xl mb-4 border border-slate-700/50">
-            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Pro Plan</h4>
-            <p className="text-xs text-slate-400 mb-3">Unlock unlimited proposals & mentors.</p>
-            <button 
-              onClick={() => onChangeView(View.PRICING)}
-              className="w-full text-xs bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-md transition-colors font-medium"
-            >
-              Upgrade Now
-            </button>
-          </div>
-        ) : userRole === UserRole.FREELANCER && isPro ? (
-           <div className="p-4 bg-slate-800/50 rounded-xl mb-4 border border-slate-700/50 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+        {userRole === UserRole.FREELANCER && isPro && (
+           <div className="p-4 bg-emerald-900/20 rounded-xl mb-4 border border-emerald-700/30 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                 <CreditCard size={14}/>
               </div>
               <div>
-                 <h4 className="text-xs font-semibold text-white">Active Pro</h4>
-                 <p className="text-[10px] text-slate-400">Next billing: Oct 20</p>
+                 <h4 className="text-xs font-semibold text-emerald-300">Mentor Connected</h4>
+                 <p className="text-[10px] text-slate-400">Full access unlocked</p>
               </div>
            </div>
-        ) : null}
+        )}
 
         <button 
             onClick={() => onChangeView(View.LANDING)}

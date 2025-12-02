@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronRight, TrendingUp, Users, ShieldCheck, Zap, BarChart3, Globe, Code, ArrowRight } from 'lucide-react';
+import { ChevronRight, TrendingUp, Users, ShieldCheck, Zap, BarChart3, Globe, Code } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 interface LandingPageProps {
@@ -13,6 +13,7 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLogin, isDark, toggleTheme }) => {
   const [isMentorMode, setIsMentorMode] = useState(false);
+  const [mentorAuthTab, setMentorAuthTab] = useState<'login' | 'signup'>('login');
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
@@ -20,40 +21,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
       <nav className="border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-50 transition-colors">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsMentorMode(false)}>
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-600/20">
-              <span className="text-white font-bold text-xl">F</span>
-            </div>
+            <img 
+              src="/images/icon48.png" 
+              alt="FairFound Logo" 
+              className="w-8 h-8"
+            />
             <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">FairFound</span>
           </div>
           <div className="flex items-center gap-4">
             <button 
                 onClick={() => setIsMentorMode(!isMentorMode)}
-                className={`font-medium text-sm transition-colors px-3 py-2 rounded-lg ${isMentorMode ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+                className={`font-medium text-sm transition-colors px-3 py-2 rounded-lg ${isMentorMode ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
             >
               {isMentorMode ? 'For Freelancers' : 'For Mentors'}
             </button>
             <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
-            <button 
-              onClick={onLogin}
-              className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
-            >
-              Log In
-            </button>
             {!isMentorMode && (
-                <button 
-                onClick={onStart}
-                className="bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                >
-                Sign Up
-                </button>
-            )}
-            {isMentorMode && (
-                 <button 
-                 onClick={onMentorLogin}
-                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                 >
-                 Join as Mentor
-                 </button>
+              <button 
+                onClick={onLogin}
+                className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
+              >
+                Log In
+              </button>
             )}
           </div>
         </div>
@@ -92,8 +81,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-md w-full mx-auto">
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Mentor Login</h3>
-                    <div className="space-y-4">
+                    {/* Tabs */}
+                    <div className="flex mb-6 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                      <button
+                        onClick={() => setMentorAuthTab('login')}
+                        className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
+                          mentorAuthTab === 'login' 
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        Login
+                      </button>
+                      <button
+                        onClick={() => setMentorAuthTab('signup')}
+                        className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
+                          mentorAuthTab === 'signup' 
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        Sign Up
+                      </button>
+                    </div>
+
+                    {mentorAuthTab === 'login' ? (
+                      <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
                             <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
@@ -109,9 +122,47 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                             Access Dashboard
                         </button>
                         <p className="text-center text-xs text-slate-400 mt-4">
-                            By joining, you agree to our Mentor Code of Conduct.
+                            Don't have an account? <button onClick={() => setMentorAuthTab('signup')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Sign up</button>
                         </p>
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">First Name</label>
+                            <input type="text" placeholder="John" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
+                            <input type="text" placeholder="Doe" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                          </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
+                            <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Job Title</label>
+                            <input type="text" placeholder="Senior Developer at Google" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                            <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                        </div>
+                        <button 
+                            onClick={onMentorLogin}
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2"
+                        >
+                            Create Mentor Account
+                        </button>
+                        <p className="text-center text-xs text-slate-400 mt-4">
+                            By signing up, you agree to our Mentor Code of Conduct.
+                        </p>
+                        <p className="text-center text-xs text-slate-400">
+                            Already have an account? <button onClick={() => setMentorAuthTab('login')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Log in</button>
+                        </p>
+                      </div>
+                    )}
                 </div>
              </div>
           </section>
@@ -127,13 +178,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                 <div className="max-w-7xl mx-auto px-6 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wide mb-8 animate-fade-in">
                     <Zap size={12} className="fill-current" />
-                    AI-Powered Career Growth
+                    Accelerate Your Freelancing Career
                 </div>
                 
                 <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-8 max-w-4xl mx-auto leading-tight">
-                    Stop Guessing. <br />
+                    Get Mentored.<br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500 dark:from-indigo-400 dark:to-blue-400">
-                    Start Growing.
+                    Rank Higher.
                     </span>
                 </h1>
                 
@@ -233,9 +284,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
       <footer className="bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 py-12 transition-colors">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-slate-900 dark:bg-white rounded flex items-center justify-center">
-                    <span className="text-white dark:text-slate-900 font-bold text-sm">F</span>
-                </div>
+                <img 
+                  src="/images/icon48.png" 
+                  alt="FairFound Logo" 
+                  className="w-6 h-6"
+                />
                 <span className="font-bold text-slate-900 dark:text-white">FairFound</span>
             </div>
             <div className="text-sm text-slate-500 dark:text-slate-400">

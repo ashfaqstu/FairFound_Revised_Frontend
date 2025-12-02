@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { FreelancerProfile, PortfolioContent } from '../types';
 import { enhancePortfolioWithGemini } from '../services/geminiService';
-import { Globe, RefreshCw, Layout, Code, ExternalLink, Loader2, Save, Download, Check } from 'lucide-react';
+import { Globe, RefreshCw, Layout, Code, ExternalLink, Loader2, Save, Download, Check, Lock } from 'lucide-react';
 
 interface PortfolioBuilderProps {
   profile: FreelancerProfile | null;
+  isSignedUp?: boolean;
+  onSignup?: () => void;
 }
 
-const PortfolioBuilder: React.FC<PortfolioBuilderProps> = ({ profile }) => {
+const PortfolioBuilder: React.FC<PortfolioBuilderProps> = ({ profile, isSignedUp = true, onSignup }) => {
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState<PortfolioContent | null>(null);
   const [published, setPublished] = useState(false);
@@ -51,8 +53,29 @@ const PortfolioBuilder: React.FC<PortfolioBuilderProps> = ({ profile }) => {
 
   if (!profile) return <div className="p-8 text-slate-500 dark:text-slate-400">Please complete onboarding first.</div>;
 
+  // Locked overlay for non-signed-up users
+  const LockedOverlay = () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-20">
+      <div className="text-center p-8 max-w-md">
+        <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="text-indigo-600 dark:text-indigo-400" size={28} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Build Your Portfolio</h3>
+        <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+          Sign up to generate and publish your AI-powered portfolio website.
+        </p>
+        <button 
+          onClick={onSignup}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
+        >
+          Sign Up Free
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       {/* Sidebar Controls */}
       <div className="w-96 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col h-full overflow-y-auto transition-colors">
         <div className="mb-8">
@@ -118,7 +141,7 @@ const PortfolioBuilder: React.FC<PortfolioBuilderProps> = ({ profile }) => {
       </div>
 
       {/* Preview Area */}
-      <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-8 overflow-y-auto transition-colors">
+      <div className={`flex-1 bg-slate-100 dark:bg-slate-950 p-8 overflow-y-auto transition-colors ${!isSignedUp ? 'blur-sm pointer-events-none' : ''}`}>
         {content ? (
             <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 min-h-[800px] flex flex-col relative group">
                 {/* Overlay Hint */}
@@ -206,6 +229,9 @@ const PortfolioBuilder: React.FC<PortfolioBuilderProps> = ({ profile }) => {
             </div>
         )}
       </div>
+      
+      {/* Locked overlay for non-signed-up users */}
+      {!isSignedUp && <LockedOverlay />}
     </div>
   );
 };

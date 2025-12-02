@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { FreelancerProfile } from '../types';
 import { generateProposalWithGemini } from '../services/geminiService';
-import { FileText, Send, Copy, Loader2, Sparkles, Check, History } from 'lucide-react';
+import { FileText, Send, Copy, Loader2, Sparkles, Check, History, Lock } from 'lucide-react';
 
 interface ProposalGeneratorProps {
   profile: FreelancerProfile | null;
+  isSignedUp?: boolean;
+  onSignup?: () => void;
 }
 
-const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ profile }) => {
+const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ profile, isSignedUp = true, onSignup }) => {
   const [jobDesc, setJobDesc] = useState('');
   const [clientName, setClientName] = useState('');
   const [tone, setTone] = useState('Professional & Confident');
@@ -40,8 +42,29 @@ const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ profile }) => {
 
   if (!profile) return <div className="p-8 text-slate-500 dark:text-slate-400">Please complete onboarding first.</div>;
 
+  // Locked overlay for non-signed-up users
+  const LockedOverlay = () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-20">
+      <div className="text-center p-8 max-w-md">
+        <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="text-indigo-600 dark:text-indigo-400" size={28} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">AI Proposal Generator</h3>
+        <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+          Sign up to generate winning proposals tailored to each job posting.
+        </p>
+        <button 
+          onClick={onSignup}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
+        >
+          Sign Up Free
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="h-full flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="h-full flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950 transition-colors relative">
       {/* Input Section */}
       <div className="w-full md:w-1/2 p-8 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto">
         <div className="mb-8">
@@ -106,7 +129,7 @@ const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ profile }) => {
       </div>
 
       {/* Output Section */}
-      <div className="w-full md:w-1/2 p-8 bg-slate-50 dark:bg-slate-950 overflow-y-auto flex flex-col transition-colors">
+      <div className={`w-full md:w-1/2 p-8 bg-slate-50 dark:bg-slate-950 overflow-y-auto flex flex-col transition-colors ${!isSignedUp ? 'blur-sm pointer-events-none' : ''}`}>
         {proposal ? (
             <div className="flex-1 flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4">
@@ -150,6 +173,9 @@ const ProposalGenerator: React.FC<ProposalGeneratorProps> = ({ profile }) => {
             </div>
         )}
       </div>
+      
+      {/* Locked overlay for non-signed-up users */}
+      {!isSignedUp && <LockedOverlay />}
     </div>
   );
 };

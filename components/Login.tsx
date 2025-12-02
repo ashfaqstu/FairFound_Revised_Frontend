@@ -37,9 +37,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack, onSignUp }) => {
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20 mx-auto mb-4">
-              <span className="text-white font-bold text-2xl">F</span>
-            </div>
+            <img 
+              src="/images/icon48.png" 
+              alt="FairFound Logo" 
+              className="w-12 h-12 mx-auto mb-4"
+            />
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2">Sign in to your FairFound account</p>
           </div>
