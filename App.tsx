@@ -184,16 +184,30 @@ const App: React.FC = () => {
   };
 
   const handleSignup = (username: string, password: string) => {
-    setIsSignedUp(true);
-    setCurrentView(View.DASHBOARD);
-    addNotification({
-      id: Date.now().toString(),
-      title: 'Account Created!',
-      message: 'Welcome to FairFound! You now have full access to all features.',
-      time: 'Just now',
-      read: false,
-      type: 'success'
-    });
+    if (isSignupFlow) {
+      // From login → signup → onboarding: create account then continue onboarding
+      addNotification({
+        id: Date.now().toString(),
+        title: 'Account Created',
+        message: 'Great! Let’s personalize your profile to get accurate insights.',
+        time: 'Just now',
+        read: false,
+        type: 'success'
+      });
+      setCurrentView(View.ONBOARDING);
+    } else {
+      // Generic signup elsewhere in app → send to dashboard
+      setIsSignedUp(true);
+      setCurrentView(View.DASHBOARD);
+      addNotification({
+        id: Date.now().toString(),
+        title: 'Account Created!',
+        message: 'Welcome to FairFound! You now have full access to all features.',
+        time: 'Just now',
+        read: false,
+        type: 'success'
+      });
+    }
   };
 
   const handleProUpgrade = () => {
@@ -352,7 +366,7 @@ const App: React.FC = () => {
         onBack={() => setCurrentView(View.LANDING)}
         onSignUp={() => {
           setIsSignupFlow(true); // Mark as signup flow for full access after onboarding
-          setCurrentView(View.ONBOARDING);
+          setCurrentView(View.SIGNUP);
         }}
       />
     );
