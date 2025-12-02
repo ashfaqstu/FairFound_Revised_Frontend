@@ -35,6 +35,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
             >
               {isMentorMode ? 'For Freelancers' : 'For Mentors'}
             </button>
+            {!isMentorMode && (
+              <button
+                onClick={() => {
+                  const el = document.getElementById('pricing');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="font-medium text-sm px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                Pricing
+              </button>
+            )}
             <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
             {!isMentorMode && (
               <button 
@@ -182,9 +193,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                 </div>
                 
                 <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-8 max-w-4xl mx-auto leading-tight">
-                    Get Mentored.<br/>
+                    Set Your Goal<br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500 dark:from-indigo-400 dark:to-blue-400">
-                    Rank Higher.
+                    Guide Your Journey.
                     </span>
                 </h1>
                 
@@ -276,6 +287,80 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                         </div>
                     </div>
                 </div>
+            </section>
+
+            {/* Pricing Section */}
+            <section id="pricing" className="py-24 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="text-center mb-16">
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Transparent Pricing</h2>
+                  <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">Start free. Upgrade only when you need advanced growth tooling and mentor access.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                  {/* Free Tier */}
+                  <div className="rounded-2xl p-8 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Free</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Core analysis tools to kickstart your freelancing journey.</p>
+                    <ul className="space-y-4 mb-8 text-sm text-slate-600 dark:text-slate-300">
+                      {[
+                        'Initial gap analysis (single run)',
+                        '1 AI roadmap generation',
+                        'Community hub access',
+                        'Public mentor directory browsing',
+                        'Basic portfolio builder template',
+                        'Limited proposal generator (3/mo)'
+                      ].map(f => (
+                        <li key={f} className="flex items-start gap-3">
+                          <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">✓</span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">$0</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-6">Always free • No credit card</div>
+                    <button onClick={onStart} className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors">Start Free</button>
+                  </div>
+                  {/* Paid Tier */}
+                  <div className="rounded-2xl p-8 border border-indigo-600 bg-white dark:bg-slate-900 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/30 relative">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide">Most Popular</div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Pro + Mentor Access</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Advanced AI tooling plus on-demand expert guidance.</p>
+                    <ul className="space-y-4 mb-8 text-sm text-slate-600 dark:text-slate-300">
+                      {[
+                        'Unlimited AI analysis & dynamic roadmap updates',
+                        'Full portfolio builder & personalization',
+                        'Unlimited proposal generator usage',
+                        'Weekly progress + rate benchmarking reports',
+                        'Mentor session booking & chat',
+                        'GitHub audit & skill certification badges'
+                      ].map(f => (
+                        <li key={f} className="flex items-start gap-3">
+                          <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">✓</span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex items-end gap-2 mb-1">
+                      <span className="text-4xl font-bold text-slate-900 dark:text-white">$29</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">/mo • Monthly</span>
+                    </div>
+                    <div className="text-xs text-slate-400 mb-6">Save 20% with annual billing.</div>
+                    <button onClick={onStart} className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors">Upgrade Now</button>
+                  </div>
+                </div>
+                {/* Mentor Pricing Explanation */}
+                <div className="mt-16 max-w-3xl mx-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-4">How Mentor Pricing Works</h4>
+                  <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <p><span className="font-semibold text-slate-800 dark:text-slate-200">Mentor Rates:</span> Each mentor sets a session or hourly rate (e.g. $40/session or $60/hr). You choose based on expertise and reviews.</p>
+                    <p><span className="font-semibold text-slate-800 dark:text-slate-200">Billing:</span> You pay the mentor's displayed rate + a small platform fee (usually 10%) that covers matching, scheduling, and AI insights integration.</p>
+                    <p><span className="font-semibold text-slate-800 dark:text-slate-200">Session Types:</span> 30–60 minute calls, async code review drops, or milestone planning workshops.</p>
+                    <p><span className="font-semibold text-slate-800 dark:text-slate-200">Example:</span> Mentor hourly rate $60 → total charge $66 (includes platform fee). A 3-session month ≈ $198.</p>
+                    <p><span className="font-semibold text-slate-800 dark:text-slate-200">Value Add:</span> Your roadmap and portfolio automatically adapt after each mentor session using their notes + AI summarization.</p>
+                    <p className="text-xs text-slate-400">Rates vary by mentor seniority; you always see costs before booking. Cancel or reschedule up to 24h prior.</p>
+                  </div>
+                </div>
+              </div>
             </section>
           </>
       )}
