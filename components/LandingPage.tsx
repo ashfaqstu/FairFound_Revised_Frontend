@@ -22,7 +22,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsMentorMode(false)}>
             <img 
-              src="/icons/logo.svg" 
+              src="/icons/icon128.png" 
               alt="FairFound Logo" 
               className="w-8 h-8"
             />
@@ -285,7 +285,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
                 <img 
-                  src="/icons/logo.svg" 
+                  src="/icons/icon128.png" 
                   alt="FairFound Logo" 
                   className="w-6 h-6"
                 />

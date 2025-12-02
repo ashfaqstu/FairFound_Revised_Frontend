@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, use
           onClick={() => onChangeView(userRole === UserRole.MENTOR ? View.MENTOR_DASHBOARD : View.DASHBOARD)}
         >
           <img 
-            src="/icons/logo.svg" 
+            src="/icons/icon128.png" 
             alt="FairFound Logo" 
             className="w-8 h-8"
           />
