@@ -6,9 +6,10 @@ interface SignupProps {
   profile: FreelancerProfile | null;
   onSignup: (username: string, password: string) => void;
   onBack: () => void;
+  onStartFreeAnalysis?: () => void;
 }
 
-const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack }) => {
+const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeAnalysis }) => {
   const [username, setUsername] = useState(profile?.email?.split('@')[0] || '');
   const [email, setEmail] = useState(profile?.email || '');
   const [password, setPassword] = useState('');
@@ -55,8 +56,8 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack }) => {
               alt="FairFound Logo" 
               className="w-12 h-12 mx-auto mb-4"
             />
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create Your Account</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-2">Unlock full access to all features</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Join FairFound</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">Save progress, sync devices, and access Pro features.</p>
           </div>
 
           {profile && (
@@ -147,6 +148,20 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack }) => {
               {loading ? <Loader2 className="animate-spin" size={20} /> : 'Create Account'}
             </button>
           </form>
+
+          <div className="mt-6">
+            <div className="text-center mb-2">
+              <p className="text-xs text-slate-400">Or continue without an account</p>
+            </div>
+            <button
+              type="button"
+              onClick={onStartFreeAnalysis}
+              className="w-full py-3.5 rounded-xl font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:text-indigo-400 border border-indigo-200 dark:border-slate-700 transition-colors"
+            >
+              Start Analysis For Free
+            </button>
+            <p className="text-center text-xs text-slate-400 mt-2">Runs a single analysis without login. You can sign up later to save results.</p>
+          </div>
 
           <p className="text-center text-xs text-slate-400 mt-6">
             By signing up, you agree to our Terms of Service and Privacy Policy.

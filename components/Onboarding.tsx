@@ -242,11 +242,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, isLoading, onBack }
             </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-          {step === 1 ? 'Join FairFound' : step === 2 ? 'Showcase Your Skills' : 'Connect Your Work'}
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          {step === 1 ? 'Discover Your True Market Potential' : step === 2 ? 'Showcase Your Skills' : 'Connect Your Work'}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mb-8">
-          {step === 1 ? "Start your journey to the top 1%." : step === 2 ? "What do you bring to the table?" : "Where can we see your code?"}
+          {step === 1 ? "Let our AI analyze your experience and generate a custom career roadmap. No sign-up needed." : step === 2 ? "What do you bring to the table?" : "Where can we see your code?"}
         </p>
 
         {renderStep()}
