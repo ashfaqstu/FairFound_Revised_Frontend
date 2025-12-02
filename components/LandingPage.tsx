@@ -60,123 +60,150 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
       </nav>
 
       {isMentorMode ? (
-          // MENTOR LANDING & LOGIN
+        <>
+          {/* Mentor hero & auth */}
           <section className="relative pt-20 pb-32 min-h-[calc(100vh-80px)] flex items-center justify-center overflow-hidden">
-             <div className="absolute inset-0 -z-10">
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-50/50 dark:bg-emerald-900/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-50/50 dark:bg-indigo-900/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-             </div>
-             
-             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div>
-                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wide mb-8">
-                        <Users size={12} className="fill-current" />
-                        FairFound for Mentors
+            <div className="absolute inset-0 -z-10">
+              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-50/50 dark:bg-emerald-900/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-50/50 dark:bg-indigo-900/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+            </div>
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wide mb-8">
+                  <Users size={12} className="fill-current" />
+                  FairFound for Mentors
+                </div>
+                <h1 className="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight">
+                  Turn your experience into <span className="text-emerald-600 dark:text-emerald-400">Income.</span>
+                </h1>
+                <p className="text-lg text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                  Mentor the next generation of top freelancers. Manage sessions, assign tasks, and track mentee growth all in one dashboard.
+                </p>
+                <ul className="space-y-4 mb-10">
+                  {['Set your own rates', 'Curated mentee matches', 'AI-assisted task generation', 'Automated scheduling'].map(feat => (
+                    <li key={feat} className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <ShieldCheck size={12} />
+                      </div>
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-md w-full mx-auto">
+                {/* Tabs */}
+                <div className="flex mb-6 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                  <button
+                    onClick={() => setMentorAuthTab('login')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
+                      mentorAuthTab === 'login'
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => setMentorAuthTab('signup')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
+                      mentorAuthTab === 'signup'
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+                {mentorAuthTab === 'login' ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
+                      <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
                     </div>
-                    <h1 className="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight">
-                        Turn your experience into <span className="text-emerald-600 dark:text-emerald-400">Income.</span>
-                    </h1>
-                    <p className="text-lg text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-                        Mentor the next generation of top freelancers. Manage sessions, assign tasks, and track mentee growth all in one dashboard.
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                      <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                    </div>
+                    <button
+                      onClick={onMentorLogin}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2"
+                    >
+                      Access Dashboard
+                    </button>
+                    <p className="text-center text-xs text-slate-400 mt-4">
+                      Don't have an account? <button onClick={() => setMentorAuthTab('signup')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Sign up</button>
                     </p>
-                    <ul className="space-y-4 mb-10">
-                        {['Set your own rates', 'Curated mentee matches', 'AI-assisted task generation', 'Automated scheduling'].map(feat => (
-                            <li key={feat} className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
-                                <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                    <ShieldCheck size={12} />
-                                </div>
-                                {feat}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-md w-full mx-auto">
-                    {/* Tabs */}
-                    <div className="flex mb-6 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                      <button
-                        onClick={() => setMentorAuthTab('login')}
-                        className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
-                          mentorAuthTab === 'login' 
-                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
-                            : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        Login
-                      </button>
-                      <button
-                        onClick={() => setMentorAuthTab('signup')}
-                        className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
-                          mentorAuthTab === 'signup' 
-                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
-                            : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        Sign Up
-                      </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">First Name</label>
+                        <input type="text" placeholder="John" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
+                        <input type="text" placeholder="Doe" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                      </div>
                     </div>
-
-                    {mentorAuthTab === 'login' ? (
-                      <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
-                            <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                            <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                        </div>
-                        <button 
-                            onClick={onMentorLogin}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2"
-                        >
-                            Access Dashboard
-                        </button>
-                        <p className="text-center text-xs text-slate-400 mt-4">
-                            Don't have an account? <button onClick={() => setMentorAuthTab('signup')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Sign up</button>
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">First Name</label>
-                            <input type="text" placeholder="John" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
-                            <input type="text" placeholder="Doe" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                          </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
-                            <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Job Title</label>
-                            <input type="text" placeholder="Senior Developer at Google" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                            <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-                        </div>
-                        <button 
-                            onClick={onMentorLogin}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2"
-                        >
-                            Create Mentor Account
-                        </button>
-                        <p className="text-center text-xs text-slate-400 mt-4">
-                            By signing up, you agree to our Mentor Code of Conduct.
-                        </p>
-                        <p className="text-center text-xs text-slate-400">
-                            Already have an account? <button onClick={() => setMentorAuthTab('login')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Log in</button>
-                        </p>
-                      </div>
-                    )}
-                </div>
-             </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
+                      <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Job Title</label>
+                      <input type="text" placeholder="Senior Developer at Google" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                      <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                    </div>
+                    <button
+                      onClick={onMentorLogin}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2"
+                    >
+                      Create Mentor Account
+                    </button>
+                    <p className="text-center text-xs text-slate-400 mt-4">
+                      By signing up, you agree to our Mentor Code of Conduct.
+                    </p>
+                    <p className="text-center text-xs text-slate-400">
+                      Already have an account? <button onClick={() => setMentorAuthTab('login')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Log in</button>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
+          {/* Mentor Benefits standalone section */}
+          <section className="py-24 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">What Mentors Get</h2>
+                <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">We amplify your expertise with tools that make mentoring scalable, rewarding, and data‑driven.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[
+                  { title: 'Flexible Earnings', desc: 'Set hourly or per‑session rates and adjust anytime.' },
+                  { title: 'Smart Matching', desc: 'AI surfaces mentees that fit your domain & availability.' },
+                  { title: 'Automated Summaries', desc: 'Each session auto‑summarized into actionable mentee tasks.' },
+                  { title: 'Reputation & Badges', desc: 'Verified profile with impact, retention & quality metrics.' },
+                  { title: 'Growth Analytics', desc: 'Track mentee progress, skill delta and roadmap completion.' },
+                  { title: 'Protected Payments', desc: 'Secure escrow & instant payout after session confirmation.' },
+                ].map(card => (
+                  <div key={card.title} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-shadow">
+                    <div className="w-10 h-10 mb-4 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm font-bold">✓</div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{card.title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{card.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-12 text-center">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Launch your mentor profile in minutes and start receiving curated mentee requests.</p>
+              </div>
+            </div>
+          </section>
+        </>
       ) : (
           // FREELANCER LANDING
           <>
@@ -195,7 +222,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                 <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-8 max-w-4xl mx-auto leading-tight">
                     Set Your Goal<br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500 dark:from-indigo-400 dark:to-blue-400">
-                    Guide Your Journey.
+                    Steer Your Journey.
                     </span>
                 </h1>
                 
@@ -303,13 +330,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Core analysis tools to kickstart your freelancing journey.</p>
                     <ul className="space-y-4 mb-8 text-sm text-slate-600 dark:text-slate-300">
                       {[
-                        'Initial gap analysis (single run)',
-                        '1 AI roadmap generation',
-                        'Community hub access',
-                        'Public mentor directory browsing',
-                        'Basic portfolio builder template',
-                        'Limited proposal generator (3/mo)'
-                      ].map(f => (
+                            'Unlimited & Detailed CV analysis',
+                            'Unlimited AI roadmap generation',
+                            'Unlimited access to portfolio analyzer powered agentic AI',
+                            'AI insights and comparisons with top market contenders',
+                            'Access to personalized chatbot'
+                        ].map(f => (
                         <li key={f} className="flex items-start gap-3">
                           <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">✓</span>
                           {f}
@@ -323,17 +349,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                   {/* Paid Tier */}
                   <div className="rounded-2xl p-8 border border-indigo-600 bg-white dark:bg-slate-900 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/30 relative">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide">Most Popular</div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Pro + Mentor Access</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Mentorship</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Advanced AI tooling plus on-demand expert guidance.</p>
                     <ul className="space-y-4 mb-8 text-sm text-slate-600 dark:text-slate-300">
                       {[
-                        'Unlimited AI analysis & dynamic roadmap updates',
-                        'Full portfolio builder & personalization',
-                        'Unlimited proposal generator usage',
-                        'Weekly progress + rate benchmarking reports',
-                        'Mentor session booking & chat',
-                        'GitHub audit & skill certification badges'
-                      ].map(f => (
+                            'Unlimited AI analysis & dynamic roadmap updates',
+                            'Weekly progress + rate benchmarking reports',
+                            'Mentor session booking & chat',
+                            'Community access',
+                            'Community leaderboard rankings',
+                            'Dynamic task customization',
+                            'Hands-on mentoring and feedback'
+                        ].map(f => (
                         <li key={f} className="flex items-start gap-3">
                           <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">✓</span>
                           {f}
