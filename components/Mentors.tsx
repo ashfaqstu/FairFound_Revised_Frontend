@@ -144,22 +144,22 @@ const Mentors: React.FC<MentorsProps> = ({
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto relative">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto relative">
       {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-center justify-between">
+        <div className="mb-4 p-3 md:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-center justify-between text-sm">
           <span>{error}</span>
           <button onClick={() => setError(null)}><X size={18} /></button>
         </div>
       )}
 
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
             {connectedMentor ? 'Your Mentor' : 'Expert Mentors'}
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mt-1 md:mt-2">
             {connectedMentor 
-              ? 'You are currently connected with a mentor. Cancel the contract to connect with someone else.'
+              ? 'You are currently connected with a mentor.'
               : 'Connect with industry leaders to accelerate your growth.'
             }
           </p>
@@ -169,7 +169,7 @@ const Mentors: React.FC<MentorsProps> = ({
             <select 
               value={specialtyFilter}
               onChange={(e) => setSpecialtyFilter(e.target.value)}
-              className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 outline-none focus:border-indigo-500"
+              className="px-3 md:px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 outline-none focus:border-indigo-500 w-full sm:w-auto"
             >
               <option value="all">All Specialties</option>
               {allSpecialties.map(spec => (
@@ -182,48 +182,48 @@ const Mentors: React.FC<MentorsProps> = ({
 
       {/* Current Mentor Card */}
       {connectedMentor && (
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-1">
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 md:mb-8">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl md:rounded-2xl p-1">
+            <div className="bg-white dark:bg-slate-900 rounded-lg md:rounded-xl p-4 md:p-6">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                  <UserCheck size={20} />
-                  <span className="text-sm font-semibold">Active Mentorship</span>
+                  <UserCheck size={18} className="md:w-5 md:h-5" />
+                  <span className="text-xs md:text-sm font-semibold">Active Mentorship</span>
                 </div>
               </div>
               
-              <div className="flex items-start gap-6">
+              <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
                 <img 
                   src={connectedMentor.imageUrl} 
                   alt={connectedMentor.name} 
-                  className="w-20 h-20 rounded-full object-cover border-4 border-indigo-100 dark:border-indigo-900"
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-4 border-indigo-100 dark:border-indigo-900"
                 />
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{connectedMentor.name}</h3>
-                  <p className="text-slate-500 dark:text-slate-400">{connectedMentor.role}</p>
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{connectedMentor.company}</p>
+                  <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{connectedMentor.name}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{connectedMentor.role}</p>
+                  <p className="text-xs md:text-sm text-indigo-600 dark:text-indigo-400 font-medium">{connectedMentor.company}</p>
                   
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {connectedMentor.specialties.map(spec => (
-                      <span key={spec} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-100 dark:border-slate-700">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2 mt-2 md:mt-3">
+                    {connectedMentor.specialties.slice(0, 3).map(spec => (
+                      <span key={spec} className="px-2 py-0.5 md:py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] md:text-xs rounded border border-slate-100 dark:border-slate-700">
                         {spec}
                       </span>
                     ))}
                   </div>
                 </div>
                 
-                <div className="flex flex-col gap-2">
+                <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
                   <button 
                     onClick={onViewMentor}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                    className="flex-1 sm:flex-none px-4 md:px-6 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg md:rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
                   >
-                    Open Chat <ArrowRight size={16} />
+                    Open Chat <ArrowRight size={14} className="md:w-4 md:h-4" />
                   </button>
                   <button 
                     onClick={() => setShowCancelModal(true)}
-                    className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-xl font-medium transition-colors text-sm"
+                    className="flex-1 sm:flex-none px-4 md:px-6 py-2 md:py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg md:rounded-xl font-medium transition-colors text-xs md:text-sm"
                   >
-                    Cancel Contract
+                    Cancel
                   </button>
                 </div>
               </div>
@@ -268,45 +268,45 @@ const Mentors: React.FC<MentorsProps> = ({
 
       {/* Mentor Grid */}
       {!connectedMentor && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredMentors.map((mentor, index) => (
-            <div key={mentor.id} className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${!isSignedUp && index > 1 ? 'blur-sm pointer-events-none' : ''}`}>
-              <div className="flex items-start gap-4 mb-4">
-                <img src={mentor.imageUrl} alt={mentor.name} className="w-16 h-16 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700" />
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{mentor.name}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{mentor.role}</p>
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mt-1">{mentor.company}</p>
+            <div key={mentor.id} className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${!isSignedUp && index > 1 ? 'blur-sm pointer-events-none' : ''}`}>
+              <div className="flex items-start gap-3 md:gap-4 mb-3 md:mb-4">
+                <img src={mentor.imageUrl} alt={mentor.name} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700" />
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm md:text-base text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{mentor.name}</h3>
+                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">{mentor.role}</p>
+                  <p className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400 font-medium mt-0.5 md:mt-1 truncate">{mentor.company}</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
-                {mentor.specialties.map(spec => (
-                  <span key={spec} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-100 dark:border-slate-700">
+              <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4 md:mb-6">
+                {mentor.specialties.slice(0, 3).map(spec => (
+                  <span key={spec} className="px-1.5 md:px-2 py-0.5 md:py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] md:text-xs rounded border border-slate-100 dark:border-slate-700">
                     {spec}
                   </span>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between py-4 border-t border-b border-slate-50 dark:border-slate-800 mb-4">
+              <div className="flex items-center justify-between py-3 md:py-4 border-t border-b border-slate-50 dark:border-slate-800 mb-3 md:mb-4">
                 <button onClick={() => handleViewReviews(mentor)} className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                  <Star className="w-4 h-4 text-amber-400 fill-current" />
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{getAverageRating(mentor).toFixed(1)}</span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500 hover:underline">({getMentorReviews(mentor.id).length || (mentor as any).totalReviews || 0} reviews)</span>
+                  <Star className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 fill-current" />
+                  <span className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-200">{getAverageRating(mentor).toFixed(1)}</span>
+                  <span className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500">({getMentorReviews(mentor.id).length || (mentor as any).totalReviews || 0})</span>
                 </button>
-                <div className="text-sm font-bold text-slate-900 dark:text-white">
+                <div className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
                   ${mentor.rate}<span className="text-slate-400 dark:text-slate-500 font-normal">/hr</span>
                 </div>
               </div>
 
-              <div className="flex gap-2 mb-4">
-                <button onClick={() => handleViewReviews(mentor)} className="flex-1 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm">
-                  <MessageCircle size={14} /> Reviews
+              <div className="flex gap-2 mb-3 md:mb-4">
+                <button onClick={() => handleViewReviews(mentor)} className="flex-1 py-1.5 md:py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs md:text-sm">
+                  <MessageCircle size={12} className="md:w-3.5 md:h-3.5" /> Reviews
                 </button>
               </div>
 
-              <button onClick={() => handleConnectClick(mentor)} className="w-full py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none">
-                <UserPlus size={18} /> Connect with Mentor
+              <button onClick={() => handleConnectClick(mentor)} className="w-full py-2 md:py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none text-sm md:text-base">
+                <UserPlus size={16} className="md:w-[18px] md:h-[18px]" /> Connect
               </button>
             </div>
           ))}

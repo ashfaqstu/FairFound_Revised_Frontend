@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FreelancerProfile } from '../types';
-import { profileAPI, FreelancerProfileData } from '../services/api';
+import { profileAPI, FreelancerProfileData, getMediaUrl } from '../services/api';
 import { Camera, Mail, MapPin, Link as LinkIcon, Save, Github, LogOut, Lock, Loader2, X, Plus, Check } from 'lucide-react';
 
 interface ProfileProps {
@@ -218,7 +218,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, onUpdate, isSignedUp = true,
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       {/* Hidden file input for avatar */}
       <input
         type="file"
@@ -230,49 +230,49 @@ const Profile: React.FC<ProfileProps> = ({ profile, onUpdate, isSignedUp = true,
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-300 flex items-center gap-2">
-          <Check size={18} />
+        <div className="mb-4 p-3 md:p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-300 flex items-center gap-2 text-sm">
+          <Check size={16} />
           {success}
         </div>
       )}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-center justify-between">
+        <div className="mb-4 p-3 md:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-center justify-between text-sm">
           <span>{error}</span>
-          <button onClick={() => setError(null)}><X size={18} /></button>
+          <button onClick={() => setError(null)}><X size={16} /></button>
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">My Profile</h2>
+      <div className="flex justify-between items-center mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">My Profile</h2>
         <button 
           onClick={isEditing ? handleSave : () => setIsEditing(true)}
           disabled={saving}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+          className={`px-4 md:px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm md:text-base ${
             isEditing 
             ? 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50' 
             : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
           }`}
         >
           {saving ? (
-            <><Loader2 size={18} className="animate-spin" /> Saving...</>
+            <><Loader2 size={16} className="animate-spin" /> <span className="hidden sm:inline">Saving...</span></>
           ) : isEditing ? (
-            <><Save size={18} /> Save Changes</>
+            <><Save size={16} /> <span className="hidden sm:inline">Save</span></>
           ) : (
-            'Edit Profile'
+            <><span className="hidden sm:inline">Edit Profile</span><span className="sm:hidden">Edit</span></>
           )}
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl md:rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Banner */}
-        <div className="h-32 bg-gradient-to-r from-indigo-500 to-purple-600 relative">
-          <div className="absolute -bottom-12 left-8">
+        <div className="h-24 md:h-32 bg-gradient-to-r from-indigo-500 to-purple-600 relative">
+          <div className="absolute -bottom-10 md:-bottom-12 left-4 md:left-8">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-900 p-1">
-                <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-2xl font-bold text-slate-500 overflow-hidden">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white dark:bg-slate-900 p-1">
+                <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xl md:text-2xl font-bold text-slate-500 overflow-hidden">
                   {formData.avatarUrl ? (
                     <img 
-                      src={formData.avatarUrl.startsWith('http') ? formData.avatarUrl : `http://localhost:8000${formData.avatarUrl}`} 
+                      src={getMediaUrl(formData.avatarUrl)} 
                       alt="Avatar" 
                       className="w-full h-full object-cover" 
                     />
@@ -284,15 +284,15 @@ const Profile: React.FC<ProfileProps> = ({ profile, onUpdate, isSignedUp = true,
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={saving}
-                className="absolute bottom-0 right-0 p-2 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="absolute bottom-0 right-0 p-1.5 md:p-2 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
-                <Camera size={14} />
+                <Camera size={12} className="md:w-3.5 md:h-3.5" />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="pt-16 px-8 pb-8">
+        <div className="pt-14 md:pt-16 px-4 md:px-8 pb-6 md:pb-8">
           {/* Main Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">

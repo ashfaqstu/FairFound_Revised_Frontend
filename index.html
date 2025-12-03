@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>FairFound Freelancer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -30,6 +30,27 @@
       }
       .dark ::-webkit-scrollbar-thumb:hover {
         background: #64748b;
+      }
+      /* Hide scrollbar for horizontal scroll areas */
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      /* Safe area padding for mobile devices with notches */
+      .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .safe-area-top {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      /* Mobile touch improvements */
+      @media (max-width: 768px) {
+        button, a {
+          -webkit-tap-highlight-color: transparent;
+        }
       }
     </style>
     <script>

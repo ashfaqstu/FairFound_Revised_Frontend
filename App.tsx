@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, FreelancerProfile, AnalysisData, RoadmapStep, Notification, UserRole, Mentor } from './types';
 import { analyzeProfileWithGemini, generateRoadmapWithGemini } from './services/geminiService';
 import { analyzeProfileWithAgents, saveProfileToBackend } from './services/agentsService';
-import { authAPI, clearTokens, isAuthenticated, initializeAuth, notificationsAPI, agentsAPI, profileAPI } from './services/api';
+import { authAPI, clearTokens, isAuthenticated, initializeAuth, notificationsAPI, agentsAPI, profileAPI, getMediaUrl } from './services/api';
 import { mapConnectedMentorToFrontend } from './services/mentorService';
 import { INITIAL_ROADMAP } from './constants';
 import Sidebar from './components/Sidebar';
@@ -30,7 +30,8 @@ import ChatSystem from './components/ChatSystem';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import AIChatbot from './components/AIChatbot';
-import { Bell, Search, X } from 'lucide-react';
+import BottomNavigation from './components/BottomNavigation';
+import { Bell, Search, X, Menu } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.LANDING);
@@ -53,6 +54,7 @@ const App: React.FC = () => {
     badges: ['Early Adopter']
   });
   const [connectedMentor, setConnectedMentor] = useState<Mentor | null>(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Load theme from local storage
   useEffect(() => {
@@ -821,28 +823,47 @@ const App: React.FC = () => {
         userRole={userRole}
       />
       
-      <main className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative">
-        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-4 z-10 transition-colors duration-300">
+      <main className="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative pb-16 md:pb-0">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 py-3 md:py-4 z-10 transition-colors duration-300">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <div>
-                <Breadcrumbs currentView={currentView} onNavigate={setCurrentView} />
-                <h1 className="text-xl font-bold text-slate-800 dark:text-white capitalize tracking-tight flex items-center gap-2">
-                  {currentView.toLowerCase().replace('_', ' ').replace('mentor', '')}
-                  {isPro && userRole === UserRole.FREELANCER && <span className="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded-full font-bold">PRO</span>}
-                  {userRole === UserRole.MENTOR && <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">MENTOR</span>}
-                </h1>
+              {/* Mobile: Logo + Title */}
+              <div className="flex items-center gap-3">
+                {/* Mobile Logo */}
+                <div className="md:hidden flex items-center gap-2">
+                  <img 
+                    src="/icons/icon128.png" 
+                    alt="FairFound Logo" 
+                    className="w-8 h-8"
+                  />
+                </div>
+                <div>
+                  <div className="hidden md:block">
+                    <Breadcrumbs currentView={currentView} onNavigate={setCurrentView} />
+                  </div>
+                  <h1 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white capitalize tracking-tight flex items-center gap-2">
+                    <span className="hidden md:inline">{currentView.toLowerCase().replace('_', ' ').replace('mentor', '')}</span>
+                    <span className="md:hidden">FairFound</span>
+                    {isPro && userRole === UserRole.FREELANCER && <span className="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded-full font-bold">PRO</span>}
+                    {userRole === UserRole.MENTOR && <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">MENTOR</span>}
+                  </h1>
+                </div>
               </div>
               
-              <div className="flex items-center gap-4 md:gap-6">
-                <div className="hidden md:flex items-center bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 w-64 transition-colors">
+              <div className="flex items-center gap-2 md:gap-6">
+                {/* Desktop Search */}
+                <div className="hidden lg:flex items-center bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 w-64 transition-colors">
                   <Search size={16} className="text-slate-400 mr-2" />
                   <input type="text" placeholder="Search..." className="bg-transparent text-sm outline-none text-slate-700 dark:text-slate-200 w-full placeholder-slate-400 dark:placeholder-slate-500" />
                 </div>
 
-                <div className="flex items-center gap-3 relative">
-                  <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
+                <div className="flex items-center gap-2 md:gap-3 relative">
+                  {/* Theme Toggle - Hidden on mobile to save space */}
+                  <div className="hidden sm:block">
+                    <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
+                  </div>
                   
+                  {/* Notifications */}
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors focus:outline-none"
@@ -853,8 +874,9 @@ const App: React.FC = () => {
                     )}
                   </button>
 
+                  {/* Notifications Dropdown */}
                   {showNotifications && (
-                    <div className="absolute top-12 right-0 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="absolute top-12 right-0 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden">
                       <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                         <h4 className="font-bold text-sm text-slate-800 dark:text-white">Notifications</h4>
                         <button onClick={markAllRead} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Mark all read</button>
@@ -903,8 +925,9 @@ const App: React.FC = () => {
                     <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowNotifications(false)}></div>
                   )}
                   
+                  {/* Profile Button */}
                   <div 
-                    className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-800 cursor-pointer"
+                    className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-slate-200 dark:border-slate-800 cursor-pointer"
                     onClick={() => setCurrentView(userRole === UserRole.MENTOR ? View.MENTOR_PROFILE : View.PROFILE)}
                   >
                     <div className="text-right hidden md:block">
@@ -913,10 +936,10 @@ const App: React.FC = () => {
                         {userRole === UserRole.MENTOR ? 'Senior Mentor' : `Lvl ${gamification.level} Freelancer`}
                       </p>
                     </div>
-                    <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-sm overflow-hidden">
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-sm overflow-hidden">
                       {profile?.avatarUrl ? (
                         <img 
-                          src={profile.avatarUrl.startsWith('http') ? profile.avatarUrl : `http://localhost:8000${profile.avatarUrl}`} 
+                          src={getMediaUrl(profile.avatarUrl)} 
                           alt="Avatar" 
                           className="w-full h-full object-cover" 
                         />
@@ -936,6 +959,15 @@ const App: React.FC = () => {
         </div>
       </main>
 
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation 
+        currentView={currentView}
+        onChangeView={setCurrentView}
+        userRole={userRole}
+        connectedMentor={!!connectedMentor}
+      />
+
+      {/* AI Chatbot - positioned above bottom nav on mobile */}
       {userRole === UserRole.FREELANCER && (
         <AIChatbot 
           pageContext={`Current page: ${currentView}. User: ${profile?.name || 'Guest'}. Role: ${userRole}. Skills: ${profile?.skills?.join(', ') || 'Not set'}. Has mentor: ${!!connectedMentor}. Is Pro: ${isPro}.`}

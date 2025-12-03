@@ -4,7 +4,8 @@
  */
 
 // @ts-ignore - Vite env
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'https://fairfound-backend.onrender.com/api';
+const MEDIA_BASE_URL = API_BASE_URL.replace('/api', '');
 
 const getAuthHeaders = (): HeadersInit => {
   const token = localStorage.getItem('access_token');
@@ -185,7 +186,7 @@ export const mapMentorToFrontend = (mentor: MentorData) => ({
   role: mentor.title,
   company: mentor.company,
   imageUrl: mentor.image_url 
-    ? (mentor.image_url.startsWith('http') ? mentor.image_url : `http://localhost:8000${mentor.image_url}`)
+    ? (mentor.image_url.startsWith('http') ? mentor.image_url : `${MEDIA_BASE_URL}${mentor.image_url}`)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(mentor.name)}&background=6366f1&color=fff`,
   specialties: mentor.specialties || [],
   rate: Number(mentor.rate),
@@ -225,7 +226,7 @@ export const mapConnectedMentorToFrontend = (mentor: {
   role: mentor.title,
   company: mentor.company,
   imageUrl: mentor.image_url 
-    ? (mentor.image_url.startsWith('http') ? mentor.image_url : `http://localhost:8000${mentor.image_url}`)
+    ? (mentor.image_url.startsWith('http') ? mentor.image_url : `${MEDIA_BASE_URL}${mentor.image_url}`)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(mentor.name)}&background=6366f1&color=fff`,
   specialties: mentor.specialties || [],
   rate: Number(mentor.rate),

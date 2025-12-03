@@ -4,7 +4,8 @@
  */
 
 // @ts-ignore - Vite env
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'https://fairfound-backend.onrender.com/api';
+const MEDIA_BASE_URL = API_BASE_URL.replace('/api', '');
 
 const getAuthHeaders = (): HeadersInit => {
   const token = localStorage.getItem('access_token');
@@ -495,7 +496,7 @@ export const mapMenteeToFrontend = (mentee: MenteeData) => ({
   avatarUrl: mentee.avatar_url
     ? mentee.avatar_url.startsWith('http')
       ? mentee.avatar_url
-      : `http://localhost:8000${mentee.avatar_url}`
+      : `${MEDIA_BASE_URL}${mentee.avatar_url}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(mentee.name)}&background=6366f1&color=fff`,
   progress: calculateProgress(mentee),
   nextSession: 'Not Scheduled',

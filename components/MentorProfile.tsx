@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { mentorProfileAPI, MentorProfileData, profileAPI } from '../services/api';
+import { mentorProfileAPI, MentorProfileData, profileAPI, getMediaUrl } from '../services/api';
 import { Camera, Mail, MapPin, Save, LogOut, Loader2, X, Plus, Check, DollarSign, Clock, Globe } from 'lucide-react';
 
 interface MentorProfileProps {
@@ -183,7 +183,7 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ onSignOut }) => {
                 <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-2xl font-bold text-slate-500 overflow-hidden">
                   {formData.image_url ? (
                     <img 
-                      src={formData.image_url.startsWith('http') ? formData.image_url : `http://localhost:8000${formData.image_url}`} 
+                      src={getMediaUrl(formData.image_url)} 
                       alt="Avatar" 
                       className="w-full h-full object-cover" 
                     />

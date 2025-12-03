@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { chatAPI, Chat, ChatMessage, ChatAttachment, formatMessageTime, formatChatTime } from '../services/chatService';
 import { useChatPolling } from '../services/usePolling';
+import { getMediaUrl } from '../services/api';
 
 interface ChatSystemProps {
   currentUser: { id: string; name: string };
@@ -223,7 +224,7 @@ const ChatSystem: React.FC<ChatSystemProps> = ({ currentUser, role, initialUserI
   };
 
   const handleDownload = (url: string, filename: string) => {
-    const fullUrl = url.startsWith('http') ? url : `http://localhost:8000${url}`;
+    const fullUrl = getMediaUrl(url);
     const link = document.createElement('a');
     link.href = fullUrl;
     link.download = filename;
@@ -263,7 +264,7 @@ const ChatSystem: React.FC<ChatSystemProps> = ({ currentUser, role, initialUserI
               <>
                 <Image size={20} className={msg.is_me ? 'text-white' : 'text-slate-500'} />
                 {att.url && (
-                  <img src={att.url.startsWith('http') ? att.url : `http://localhost:8000${att.url}`} alt={att.name} className="max-w-[200px] rounded-lg" />
+                  <img src={getMediaUrl(att.url)} alt={att.name} className="max-w-[200px] rounded-lg" />
                 )}
               </>
             ) : (

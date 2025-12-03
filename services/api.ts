@@ -4,7 +4,7 @@
  */
 
 // @ts-ignore - Vite env
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'https://fairfound-backend.onrender.com/api';
 
 // Token management
 let accessToken: string | null = localStorage.getItem('access_token');
@@ -429,6 +429,13 @@ export const mentorProfileAPI = {
 
 // Export API_BASE_URL for avatar upload
 export { API_BASE_URL };
+
+// Media URL helper - converts relative URLs to absolute
+export const MEDIA_BASE_URL = API_BASE_URL.replace('/api', '');
+export const getMediaUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  return url.startsWith('http') ? url : `${MEDIA_BASE_URL}${url}`;
+};
 
 // ============================================
 // AGENTS API (Junior Frontend Analysis)

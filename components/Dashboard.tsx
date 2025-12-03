@@ -328,85 +328,87 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
   const radarGridColor = isDark ? '#334155' : '#e2e8f0';
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8">
       {/* Re-Evaluation Button */}
       {isSignedUp && (
         <div className="flex justify-end">
           <button
             onClick={() => setShowReEvalModal(true)}
-            className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors flex items-center gap-2 border border-indigo-200 dark:border-indigo-800"
+            className="px-3 md:px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors flex items-center gap-2 border border-indigo-200 dark:border-indigo-800 text-sm md:text-base"
           >
-            <RefreshCw size={18} />
-            Re-Evaluate Profile
+            <RefreshCw size={16} className="md:w-[18px] md:h-[18px]" />
+            <span className="hidden sm:inline">Re-Evaluate Profile</span>
+            <span className="sm:hidden">Re-Evaluate</span>
           </button>
         </div>
       )}
 
       {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+        <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
                 <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Global Readiness</p>
-                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{analysis.globalReadinessScore}/100</h3>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Global Readiness</p>
+                    <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white mt-1 md:mt-2">{analysis.globalReadinessScore}/100</h3>
                 </div>
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
-                    <Trophy size={24} />
+                <div className="p-1.5 md:p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                    <Trophy size={20} className="md:w-6 md:h-6" />
                 </div>
             </div>
-            <div className="mt-4 flex items-center text-sm text-emerald-600 dark:text-emerald-400">
-                <TrendingUp size={16} className="mr-1" />
-                <span>Top {100 - analysis.marketPercentile}% of peers</span>
+            <div className="mt-2 md:mt-4 flex items-center text-xs md:text-sm text-emerald-600 dark:text-emerald-400">
+                <TrendingUp size={14} className="mr-1 md:w-4 md:h-4" />
+                <span>Top {100 - analysis.marketPercentile}%</span>
             </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
                 <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Market Rate</p>
-                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">${analysis.pricingSuggestion.recommended}/hr</h3>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Market Rate</p>
+                    <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white mt-1 md:mt-2">${analysis.pricingSuggestion.recommended}/hr</h3>
                 </div>
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
-                    <DollarSign size={24} />
+                <div className="p-1.5 md:p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
+                    <DollarSign size={20} className="md:w-6 md:h-6" />
                 </div>
             </div>
-            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                Potential +${Math.round(analysis.pricingSuggestion.recommended - analysis.pricingSuggestion.current)} increase
+            <p className="mt-2 md:mt-4 text-xs md:text-sm text-slate-500 dark:text-slate-400">
+                +${Math.round(analysis.pricingSuggestion.recommended - analysis.pricingSuggestion.current)} potential
             </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
                 <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Current Level</p>
-                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">Lvl {gamification.level}</h3>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Current Level</p>
+                    <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white mt-1 md:mt-2">Lvl {gamification.level}</h3>
                 </div>
-                <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
-                    <Star size={24} />
+                <div className="p-1.5 md:p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                    <Star size={20} className="md:w-6 md:h-6" />
                 </div>
             </div>
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4">
-                <div className="bg-amber-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 md:h-2 mt-2 md:mt-4">
+                <div className="bg-amber-500 h-1.5 md:h-2 rounded-full" style={{ width: '75%' }}></div>
             </div>
-            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 text-right">{gamification.xp} XP / Next Lvl</p>
+            <p className="mt-1 text-[10px] md:text-xs text-slate-400 dark:text-slate-500 text-right">{gamification.xp} XP</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl md:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
                 <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Activity Streak</p>
-                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{gamification.streak} Days</h3>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Activity Streak</p>
+                    <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white mt-1 md:mt-2">{gamification.streak} Days</h3>
                 </div>
-                <div className="p-2 bg-rose-50 dark:bg-rose-900/30 rounded-lg text-rose-600 dark:text-rose-400">
-                    <Activity size={24} />
+                <div className="p-1.5 md:p-2 bg-rose-50 dark:bg-rose-900/30 rounded-lg text-rose-600 dark:text-rose-400">
+                    <Activity size={20} className="md:w-6 md:h-6" />
                 </div>
             </div>
-            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Keep it up to earn the Fire Badge!</p>
+            <p className="mt-2 md:mt-4 text-xs md:text-sm text-slate-500 dark:text-slate-400 hidden sm:block">Keep it up to earn the Fire Badge!</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 sm:hidden">🔥 Keep going!</p>
         </div>
       </div>
 
       {/* Main Charts Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
         {/* Radar Chart - Skill Analysis */}
         <LockedSection title="Unlock your competency analysis">
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-1">
@@ -489,38 +491,38 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
       </div>
 
        {/* Weekly Report Card */}
-       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-900 dark:to-slate-900 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <FileText size={32} className="text-white" />
+       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-900 dark:to-slate-900 rounded-xl md:rounded-2xl p-4 md:p-6 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+            <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl backdrop-blur-sm">
+                    <FileText size={24} className="md:w-8 md:h-8 text-white" />
                 </div>
                 <div>
-                    <h3 className="text-xl font-bold">Weekly Report Card</h3>
-                    <p className="text-indigo-200 text-sm">Your performance summary for Oct 12 - Oct 19</p>
+                    <h3 className="text-base md:text-xl font-bold">Weekly Report Card</h3>
+                    <p className="text-indigo-200 text-xs md:text-sm">Oct 12 - Oct 19</p>
                 </div>
             </div>
             
-            <div className="flex gap-6">
+            <div className="flex gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-start">
                 <div className="text-center">
-                    <p className="text-indigo-200 text-xs uppercase font-semibold">Skills Improved</p>
-                    <p className="text-2xl font-bold">+3</p>
+                    <p className="text-indigo-200 text-[10px] md:text-xs uppercase font-semibold">Skills</p>
+                    <p className="text-lg md:text-2xl font-bold">+3</p>
                 </div>
                 <div className="text-center">
-                    <p className="text-indigo-200 text-xs uppercase font-semibold">Profile Views</p>
-                    <p className="text-2xl font-bold">142</p>
+                    <p className="text-indigo-200 text-[10px] md:text-xs uppercase font-semibold">Views</p>
+                    <p className="text-lg md:text-2xl font-bold">142</p>
                 </div>
                 <div className="text-center">
-                    <p className="text-indigo-200 text-xs uppercase font-semibold">Rank Change</p>
-                    <div className="text-2xl font-bold flex items-center justify-center gap-1 text-emerald-300">
-                        <TrendingUp size={16} /> +5%
+                    <p className="text-indigo-200 text-[10px] md:text-xs uppercase font-semibold">Rank</p>
+                    <div className="text-lg md:text-2xl font-bold flex items-center justify-center gap-1 text-emerald-300">
+                        <TrendingUp size={14} className="md:w-4 md:h-4" /> +5%
                     </div>
                 </div>
             </div>
 
             <button 
                 onClick={() => onNavigate(View.INSIGHTS)}
-                className="bg-white text-indigo-700 dark:bg-slate-800 dark:text-indigo-300 px-6 py-2.5 rounded-lg font-semibold hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors shadow-sm border border-transparent dark:border-slate-700"
+                className="w-full md:w-auto bg-white text-indigo-700 dark:bg-slate-800 dark:text-indigo-300 px-4 md:px-6 py-2 md:py-2.5 rounded-lg font-semibold hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors shadow-sm border border-transparent dark:border-slate-700 text-sm md:text-base"
             >
                 View Full Report
             </button>
@@ -528,7 +530,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
       </div>
 
       {/* Quick Recommendations Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <LockedSection title="Unlock skill gap analysis">
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
               <div className="relative z-10">

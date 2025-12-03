@@ -6,6 +6,7 @@ import {
   User, Link as LinkIcon, ExternalLink, Loader2
 } from 'lucide-react';
 import { mentorDashboardAPI, SessionData } from '../services/mentorDashboardService';
+import { getMediaUrl } from '../services/api';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -74,7 +75,7 @@ const MentorSessions: React.FC = () => {
         menteeId: String(s.mentee),
         menteeName: s.mentee_name,
         menteeAvatar: s.mentee_avatar 
-          ? (s.mentee_avatar.startsWith('http') ? s.mentee_avatar : `http://localhost:8000${s.mentee_avatar}`)
+          ? getMediaUrl(s.mentee_avatar)
           : `https://ui-avatars.com/api/?name=${encodeURIComponent(s.mentee_name)}&background=6366f1&color=fff`,
         mentorId: String(s.mentor),
         date: s.date,

@@ -233,14 +233,14 @@ const Roadmap: React.FC<RoadmapProps> = ({
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Your Growth Roadmap</h2>
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Your Growth Roadmap</h2>
           <div className="flex items-center gap-2">
             {hasMentor && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold">
+              <span className="inline-flex items-center gap-1 px-2 md:px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-[10px] md:text-xs font-bold">
                 <Crown size={12} /> MENTOR GUIDED
               </span>
             )}
@@ -248,30 +248,32 @@ const Roadmap: React.FC<RoadmapProps> = ({
               <button
                 onClick={handleGenerateRoadmap}
                 disabled={generating || skillGaps.length === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs md:text-sm font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
               >
-                {generating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                Regenerate
+                {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                <span className="hidden sm:inline">Regenerate</span>
+                <span className="sm:hidden">Refresh</span>
               </button>
             )}
           </div>
         </div>
 
         {/* AI Badge */}
-        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm ${
+        <div className={`inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-xs md:text-sm ${
           hasMentor
             ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
             : 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800'
         }`}>
-          <Sparkles size={16} className={hasMentor ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'} />
+          <Sparkles size={14} className={`md:w-4 md:h-4 ${hasMentor ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
           <span className={hasMentor ? 'text-emerald-700 dark:text-emerald-300' : 'text-indigo-700 dark:text-indigo-300'}>
-            {hasMentor ? 'Personalized roadmap with tasks from your mentor' : 'AI-generated roadmap with learning resources'}
+            <span className="hidden sm:inline">{hasMentor ? 'Personalized roadmap with tasks from your mentor' : 'AI-generated roadmap with learning resources'}</span>
+            <span className="sm:hidden">{hasMentor ? 'Mentor guided' : 'AI-generated'}</span>
           </span>
-          <Shield size={16} className={hasMentor ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'} />
+          <Shield size={14} className={`md:w-4 md:h-4 hidden sm:block ${hasMentor ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
         </div>
 
         {!hasMentor && isSignedUp && (
-          <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 mt-3 md:mt-4 text-xs md:text-sm">
             Click on the resource links to access tutorials, documentation, and courses.
           </p>
         )}
@@ -308,13 +310,13 @@ const Roadmap: React.FC<RoadmapProps> = ({
 
       {/* Find Mentor Banner */}
       {!hasMentor && isSignedUp && steps.length > 0 && (
-        <div className="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 md:mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl md:rounded-2xl p-4 md:p-6 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold mb-1">Get Personalized Tasks & Guidance</h3>
-              <p className="text-indigo-100 text-sm">Connect with a mentor to unlock detailed tasks, feedback, and 1:1 sessions.</p>
+              <h3 className="text-base md:text-lg font-bold mb-1">Get Personalized Tasks & Guidance</h3>
+              <p className="text-indigo-100 text-xs md:text-sm">Connect with a mentor to unlock detailed tasks, feedback, and 1:1 sessions.</p>
             </div>
-            <button onClick={onFindMentor} className="bg-white text-indigo-700 px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-50 transition-colors shrink-0">
+            <button onClick={onFindMentor} className="bg-white text-indigo-700 px-4 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl font-bold hover:bg-indigo-50 transition-colors shrink-0 text-sm md:text-base w-full sm:w-auto">
               Find a Mentor
             </button>
           </div>
@@ -325,9 +327,9 @@ const Roadmap: React.FC<RoadmapProps> = ({
       {steps.length > 0 && (
         <div className="relative">
           {/* Connector Line */}
-          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
+          <div className="absolute left-4 md:left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
 
-          <div className={`space-y-4 ${!isSignedUp ? 'blur-sm pointer-events-none select-none' : ''}`}>
+          <div className={`space-y-3 md:space-y-4 ${!isSignedUp ? 'blur-sm pointer-events-none select-none' : ''}`}>
             {steps.map((step, index) => {
               const isExpanded = expandedSteps.includes(step.id);
               const tasks = step.tasks || (hasMentor ? getMockTasks(step.id) : []);
@@ -336,36 +338,36 @@ const Roadmap: React.FC<RoadmapProps> = ({
               return (
                 <div key={step.id} className={`relative ${shouldFade ? 'opacity-40' : ''}`}>
                   {/* Node */}
-                  <div className={`absolute left-4 w-5 h-5 rounded-full border-4 border-white dark:border-slate-950 z-10 ${
+                  <div className={`absolute left-2 md:left-4 w-4 h-4 md:w-5 md:h-5 rounded-full border-4 border-white dark:border-slate-950 z-10 ${
                     step.status === 'completed' ? 'bg-emerald-500' :
                     step.status === 'in-progress' ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'
                   }`}></div>
 
                   {/* Card */}
-                  <div className="ml-14">
+                  <div className="ml-10 md:ml-14">
                     <div className={`bg-white dark:bg-slate-900 rounded-xl border transition-all ${
                       step.status === 'in-progress'
                         ? 'border-indigo-200 dark:border-indigo-800 shadow-md'
                         : 'border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md'
                     }`}>
                       {/* Step Header */}
-                      <div className="p-5">
-                        <div className="flex items-start justify-between mb-3">
+                      <div className="p-4 md:p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
                           <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(step.status)}`}>
-                              {step.status === 'completed' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                            <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-1 rounded-full text-[10px] md:text-xs font-medium border ${getStatusColor(step.status)}`}>
+                              {step.status === 'completed' ? <CheckCircle2 size={10} className="md:w-3 md:h-3" /> : <Clock size={10} className="md:w-3 md:h-3" />}
                               {step.status.replace('-', ' ')}
                             </span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500">{step.duration}</span>
+                            <span className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500">{step.duration}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
+                          <div className="flex items-center gap-1.5 md:gap-2 text-slate-400 dark:text-slate-500 text-[10px] md:text-xs">
                             {getIcon(step.type)}
                             <span className="uppercase tracking-wide">{step.type}</span>
                           </div>
                         </div>
 
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                        <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
+                        <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                           {renderDescription(step.description)}
                         </p>
 
