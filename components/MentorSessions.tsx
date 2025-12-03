@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Session, MentorAvailability, TimeSlot } from '../types';
 import { 
   Calendar, Clock, Video, Check, X, MessageCircle, 
   ChevronLeft, ChevronRight, Filter, Search, Settings,
-  User, Link as LinkIcon, ExternalLink
+  User, Link as LinkIcon, ExternalLink, Loader2
 } from 'lucide-react';
+import { mentorDashboardAPI, SessionData } from '../services/mentorDashboardService';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -12,64 +13,117 @@ const DAY_LABELS: Record<string, string> = {
   friday: 'Fri', saturday: 'Sat', sunday: 'Sun'
 };
 
-const MOCK_SESSIONS: Session[] = [
-  {
-    id: '1', menteeId: 'm1', menteeName: 'Alex Rivera', 
-    menteeAvatar: 'https://ui-avatars.com/api/?name=Alex+Rivera&background=6366f1&color=fff',
-    mentorId: 'mentor1', date: '2024-12-05', time: '14:00', duration: 45,
-    topic: 'Code Review: Dashboard Project', status: 'pending'
-  },
-  {
-    id: '2', menteeId: 'm2', menteeName: 'Sarah Jenkins',
-    menteeAvatar: 'https://picsum.photos/200/200?random=13',
-    mentorId: 'mentor1', date: '2024-12-06', time: '10:00', duration: 60,
-    topic: 'Career Strategy Discussion', status: 'accepted', meetingLink: 'https://meet.google.com/abc-defg-hij'
-  },
-  {
-    id: '3', menteeId: 'm1', menteeName: 'Alex Rivera',
-    menteeAvatar: 'https://ui-avatars.com/api/?name=Alex+Rivera&background=6366f1&color=fff',
-    mentorId: 'mentor1', date: '2024-12-03', time: '15:00', duration: 30,
-    topic: 'Initial Assessment', status: 'completed'
-  },
-  {
-    id: '4', menteeId: 'm3', menteeName: 'Mike Chen',
-    menteeAvatar: 'https://ui-avatars.com/api/?name=Mike+Chen&background=10b981&color=fff',
-    mentorId: 'mentor1', date: '2024-12-07', time: '11:00', duration: 45,
-    topic: 'Backend Architecture Review', status: 'pending'
-  }
-];
-
 const MentorSessions: React.FC = () => {
-  const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'pending' | 'past'>('upcoming');
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [savingAvailability, setSavingAvailability] = useState(false);
   const [availability, setAvailability] = useState<MentorAvailability>({
-    slots: [
-      { day: 'monday', startTime: '09:00', endTime: '17:00' },
-      { day: 'wednesday', startTime: '09:00', endTime: '17:00' },
-      { day: 'friday', startTime: '10:00', endTime: '15:00' }
-    ],
+    slots: [],
     sessionDuration: 45,
     timezone: 'America/New_York'
   });
 
-  const handleAcceptSession = (sessionId: string) => {
-    setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, status: 'accepted', meetingLink: 'https://meet.google.com/generated-link' } : s
-    ));
+  useEffect(() => {
+    loadSessions();
+    loadAvailability();
+  }, []);
+
+  const loadAvailability = async () => {
+    try {
+      const data = await mentorDashboardAPI.getAvailability();
+      setAvailability({
+        slots: (data.slots || []).map((s: any) => ({
+          day: s.day,
+          startTime: s.startTime || s.start_time || '09:00',
+          endTime: s.endTime || s.end_time || '17:00'
+        })),
+        sessionDuration: data.session_duration || 45,
+        timezone: data.timezone || 'America/New_York'
+      });
+    } catch (err) {
+      console.log('[MENTOR SESSIONS] Could not load availability');
+    }
   };
 
-  const handleRejectSession = (sessionId: string) => {
-    setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, status: 'rejected' } : s
-    ));
+  const handleSaveAvailability = async () => {
+    try {
+      setSavingAvailability(true);
+      await mentorDashboardAPI.updateAvailability({
+        slots: availability.slots,
+        session_duration: availability.sessionDuration,
+        timezone: availability.timezone
+      });
+      setShowAvailabilityModal(false);
+    } catch (err) {
+      console.error('[MENTOR SESSIONS] Error saving availability:', err);
+      alert('Failed to save availability. Please try again.');
+    } finally {
+      setSavingAvailability(false);
+    }
   };
 
-  const handleCompleteSession = (sessionId: string) => {
-    setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, status: 'completed' } : s
-    ));
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const data = await mentorDashboardAPI.getSessions();
+      const mappedSessions: Session[] = data.map((s: SessionData) => ({
+        id: String(s.id),
+        menteeId: String(s.mentee),
+        menteeName: s.mentee_name,
+        menteeAvatar: s.mentee_avatar 
+          ? (s.mentee_avatar.startsWith('http') ? s.mentee_avatar : `http://localhost:8000${s.mentee_avatar}`)
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(s.mentee_name)}&background=6366f1&color=fff`,
+        mentorId: String(s.mentor),
+        date: s.date,
+        time: s.time,
+        duration: s.duration,
+        topic: s.topic,
+        status: s.status,
+        meetingLink: s.meeting_link || undefined,
+        notes: s.notes,
+      }));
+      setSessions(mappedSessions);
+    } catch (err) {
+      console.error('[MENTOR SESSIONS] Error loading sessions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptSession = async (sessionId: string) => {
+    try {
+      await mentorDashboardAPI.updateSessionStatus(Number(sessionId), 'accepted');
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, status: 'accepted', meetingLink: 'https://meet.google.com/generated-link' } : s
+      ));
+    } catch (err) {
+      console.error('[MENTOR SESSIONS] Error accepting session:', err);
+    }
+  };
+
+  const handleRejectSession = async (sessionId: string) => {
+    try {
+      await mentorDashboardAPI.updateSessionStatus(Number(sessionId), 'rejected');
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, status: 'rejected' } : s
+      ));
+    } catch (err) {
+      console.error('[MENTOR SESSIONS] Error rejecting session:', err);
+    }
+  };
+
+  const handleCompleteSession = async (sessionId: string) => {
+    try {
+      await mentorDashboardAPI.updateSessionStatus(Number(sessionId), 'completed');
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, status: 'completed' } : s
+      ));
+    } catch (err) {
+      console.error('[MENTOR SESSIONS] Error completing session:', err);
+    }
   };
 
   const toggleDayAvailability = (day: typeof DAYS[number]) => {
@@ -117,6 +171,15 @@ const MentorSessions: React.FC = () => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="animate-spin text-indigo-600" size={32} />
+        <span className="ml-3 text-slate-600 dark:text-slate-400">Loading sessions...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 p-8 overflow-y-auto">
@@ -290,16 +353,16 @@ const MentorSessions: React.FC = () => {
       {/* Availability Modal */}
       {showAvailabilityModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center flex-shrink-0">
               <h3 className="font-bold text-slate-900 dark:text-white">Set Your Availability</h3>
               <button onClick={() => setShowAvailabilityModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-4 space-y-4 overflow-y-auto flex-1">
               {/* Session Duration */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Default Session Duration</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Session Duration</label>
                 <div className="flex gap-2">
                   {[30, 45, 60].map(duration => (
                     <button
@@ -323,7 +386,7 @@ const MentorSessions: React.FC = () => {
                 <select 
                   value={availability.timezone}
                   onChange={(e) => setAvailability(prev => ({ ...prev, timezone: e.target.value }))}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white text-sm"
                 >
                   <option value="America/New_York">Eastern Time (ET)</option>
                   <option value="America/Chicago">Central Time (CT)</option>
@@ -337,40 +400,40 @@ const MentorSessions: React.FC = () => {
 
               {/* Available Days */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Available Days & Hours</label>
-                <div className="space-y-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Available Days</label>
+                <div className="space-y-2">
                   {DAYS.map(day => {
                     const slot = availability.slots.find(s => s.day === day);
                     const isActive = !!slot;
                     return (
-                      <div key={day} className={`p-3 rounded-lg border transition-colors ${isActive ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/10' : 'border-slate-200 dark:border-slate-700'}`}>
-                        <div className="flex items-center justify-between">
+                      <div key={day} className={`p-2 rounded-lg border transition-colors ${isActive ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/10' : 'border-slate-200 dark:border-slate-700'}`}>
+                        <div className="flex items-center justify-between gap-2">
                           <button
                             onClick={() => toggleDayAvailability(day)}
-                            className="flex items-center gap-3"
+                            className="flex items-center gap-2"
                           >
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isActive ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'}`}>
-                              {isActive && <Check size={12} className="text-white" />}
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${isActive ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'}`}>
+                              {isActive && <Check size={10} className="text-white" />}
                             </div>
-                            <span className={`font-medium capitalize ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
-                              {day}
+                            <span className={`text-sm font-medium capitalize ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
+                              {DAY_LABELS[day]}
                             </span>
                           </button>
                           
                           {isActive && slot && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <input
                                 type="time"
                                 value={slot.startTime}
                                 onChange={(e) => updateSlotTime(day, 'startTime', e.target.value)}
-                                className="px-2 py-1 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                                className="px-1.5 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white w-20"
                               />
-                              <span className="text-slate-400">to</span>
+                              <span className="text-slate-400 text-xs">-</span>
                               <input
                                 type="time"
                                 value={slot.endTime}
                                 onChange={(e) => updateSlotTime(day, 'endTime', e.target.value)}
-                                className="px-2 py-1 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white"
+                                className="px-1.5 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white w-20"
                               />
                             </div>
                           )}
@@ -380,12 +443,22 @@ const MentorSessions: React.FC = () => {
                   })}
                 </div>
               </div>
+            </div>
 
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex-shrink-0">
               <button 
-                onClick={() => setShowAvailabilityModal(false)}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors"
+                onClick={handleSaveAvailability}
+                disabled={savingAvailability}
+                className="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Save Availability
+                {savingAvailability ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Availability'
+                )}
               </button>
             </div>
           </div>

@@ -1,88 +1,48 @@
-import React, { useState } from 'react';
-import { Users, CheckCircle, Clock, Lock, Flame, Target } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, CheckCircle, Lock, Flame, Target, Loader2 } from 'lucide-react';
+import { communityAPI, PodMember, HeatmapDay, ActivityItem } from '../services/communityService';
 
 interface CommunityProps {
   isSignedUp?: boolean;
   onSignup?: () => void;
 }
 
-interface CompletedTask {
-  id: string;
-  memberId: string;
-  memberName: string;
-  memberAvatar: string;
-  taskTitle: string;
-  roadmapStep: string;
-  mentorName: string;
-  completedAt: string;
-  timeAgo: string;
-}
-
-interface PodMember {
-  id: string;
-  name: string;
-  avatar: string;
-  title: string;
-  tasksCompletedThisWeek: number;
-  totalTasksCompleted: number;
-  currentStreak: number;
-  isMe?: boolean;
-}
-
-// Generate heatmap data for the last 52 weeks (full year like GitHub)
-const generateHeatmapData = () => {
-  const weeks = [];
-  const today = new Date();
-  
-  for (let week = 51; week >= 0; week--) {
-    const days = [];
-    for (let day = 0; day < 7; day++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - (week * 7 + (6 - day)));
-      
-      // Random activity level (0-4) - more recent = more likely to have activity
-      let level = 0;
-      if (week < 40) {
-        const rand = Math.random();
-        if (rand > 0.75) level = 4;
-        else if (rand > 0.55) level = 3;
-        else if (rand > 0.35) level = 2;
-        else if (rand > 0.15) level = 1;
-      }
-      
-      days.push({
-        date: date.toISOString().split('T')[0],
-        level,
-        count: level * 2
-      });
-    }
-    weeks.push(days);
-  }
-  return weeks;
-};
-
-
 const Community: React.FC<CommunityProps> = ({ isSignedUp = true, onSignup }) => {
-  const [heatmapData] = useState(generateHeatmapData());
+  const [loading, setLoading] = useState(true);
+  const [heatmapData, setHeatmapData] = useState<HeatmapDay[][]>([]);
+  const [totalContributions, setTotalContributions] = useState(0);
+  const [podMembers, setPodMembers] = useState<PodMember[]>([]);
+  const [mentorName, setMentorName] = useState<string | null>(null);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
 
-  const [podMembers] = useState<PodMember[]>([
-    { id: '1', name: 'You', avatar: 'bg-indigo-500', title: 'Frontend Developer', tasksCompletedThisWeek: 4, totalTasksCompleted: 28, currentStreak: 7, isMe: true },
-    { id: '2', name: 'Sarah K.', avatar: 'bg-rose-500', title: 'Frontend Developer', tasksCompletedThisWeek: 6, totalTasksCompleted: 35, currentStreak: 12 },
-    { id: '3', name: 'Mike C.', avatar: 'bg-emerald-500', title: 'React Developer', tasksCompletedThisWeek: 3, totalTasksCompleted: 22, currentStreak: 5 },
-    { id: '4', name: 'Alex R.', avatar: 'bg-amber-500', title: 'Frontend Developer', tasksCompletedThisWeek: 5, totalTasksCompleted: 31, currentStreak: 9 },
-    { id: '5', name: 'Jordan L.', avatar: 'bg-purple-500', title: 'UI Developer', tasksCompletedThisWeek: 2, totalTasksCompleted: 18, currentStreak: 3 },
-  ]);
+  useEffect(() => {
+    if (isSignedUp) {
+      loadData();
+    }
+  }, [isSignedUp]);
 
-  const [recentActivity] = useState<CompletedTask[]>([
-    { id: '1', memberId: '2', memberName: 'Sarah K.', memberAvatar: 'bg-rose-500', taskTitle: 'Build a responsive navbar component', roadmapStep: 'Master React Hooks', mentorName: 'Elena Rostova', completedAt: '2024-12-02T14:30:00', timeAgo: '2 hours ago' },
-    { id: '2', memberId: '4', memberName: 'Alex R.', memberAvatar: 'bg-amber-500', taskTitle: 'Implement user authentication flow', roadmapStep: 'Build Portfolio Project', mentorName: 'Marcus Chen', completedAt: '2024-12-02T12:15:00', timeAgo: '4 hours ago' },
-    { id: '3', memberId: '3', memberName: 'Mike C.', memberAvatar: 'bg-emerald-500', taskTitle: 'Create custom useDebounce hook', roadmapStep: 'Master React Hooks', mentorName: 'Elena Rostova', completedAt: '2024-12-02T10:00:00', timeAgo: '6 hours ago' },
-    { id: '4', memberId: '2', memberName: 'Sarah K.', memberAvatar: 'bg-rose-500', taskTitle: 'Write unit tests for API service', roadmapStep: 'Testing Fundamentals', mentorName: 'Elena Rostova', completedAt: '2024-12-01T18:45:00', timeAgo: 'Yesterday' },
-    { id: '5', memberId: '5', memberName: 'Jordan L.', memberAvatar: 'bg-purple-500', taskTitle: 'Design mobile-first layout', roadmapStep: 'Responsive Design', mentorName: 'Sarah Johnson', completedAt: '2024-12-01T16:20:00', timeAgo: 'Yesterday' },
-    { id: '6', memberId: '4', memberName: 'Alex R.', memberAvatar: 'bg-amber-500', taskTitle: 'Optimize bundle size with code splitting', roadmapStep: 'Performance Optimization', mentorName: 'Marcus Chen', completedAt: '2024-12-01T14:00:00', timeAgo: 'Yesterday' },
-    { id: '7', memberId: '1', memberName: 'You', memberAvatar: 'bg-indigo-500', taskTitle: 'Implement dark mode toggle', roadmapStep: 'Build Portfolio Project', mentorName: 'Elena Rostova', completedAt: '2024-12-01T11:30:00', timeAgo: '2 days ago' },
-    { id: '8', memberId: '3', memberName: 'Mike C.', memberAvatar: 'bg-emerald-500', taskTitle: 'Set up CI/CD pipeline', roadmapStep: 'DevOps Basics', mentorName: 'Elena Rostova', completedAt: '2024-11-30T15:00:00', timeAgo: '2 days ago' },
-  ]);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load all data in parallel
+      const [podResponse, heatmapResponse, activityResponse] = await Promise.all([
+        communityAPI.getPodMembers().catch(() => ({ members: [], mentor_name: null })),
+        communityAPI.getHeatmapData().catch(() => ({ weeks: [], total_contributions: 0 })),
+        communityAPI.getRecentActivity().catch(() => ({ activities: [] })),
+      ]);
+      
+      setPodMembers(podResponse.members);
+      setMentorName(podResponse.mentor_name);
+      setHeatmapData(heatmapResponse.weeks);
+      setTotalContributions(heatmapResponse.total_contributions);
+      setRecentActivity(activityResponse.activities);
+    } catch (err) {
+      console.error('[COMMUNITY] Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getHeatmapColor = (level: number) => {
     switch (level) {
@@ -95,9 +55,27 @@ const Community: React.FC<CommunityProps> = ({ isSignedUp = true, onSignup }) =>
     }
   };
 
-  const totalContributions = heatmapData.flat().reduce((sum, day) => sum + day.count, 0);
-  const myTasksThisWeek = podMembers.find(m => m.isMe)?.tasksCompletedThisWeek || 0;
-  const podAverage = Math.round(podMembers.reduce((sum, m) => sum + m.tasksCompletedThisWeek, 0) / podMembers.length);
+  const getAvatarUrl = (avatarUrl: string | null, name: string) => {
+    if (avatarUrl) {
+      return avatarUrl.startsWith('http') ? avatarUrl : `http://localhost:8000${avatarUrl}`;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff`;
+  };
+
+  const myStats = podMembers.find(m => m.is_me);
+  const myTasksThisWeek = myStats?.tasks_this_week || 0;
+  const podAverage = podMembers.length > 0 
+    ? Math.round(podMembers.reduce((sum, m) => sum + m.tasks_this_week, 0) / podMembers.length)
+    : 0;
+
+  if (loading && isSignedUp) {
+    return (
+      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="animate-spin text-indigo-600" size={32} />
+        <span className="ml-3 text-slate-600 dark:text-slate-400">Loading community...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -109,7 +87,9 @@ const Community: React.FC<CommunityProps> = ({ isSignedUp = true, onSignup }) =>
           </div>
           <div>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Your Pod</h2>
-            <p className="text-slate-500 dark:text-slate-400">Junior Frontend Developers • 5 members</p>
+            <p className="text-slate-500 dark:text-slate-400">
+              {mentorName ? `Mentor: ${mentorName}` : 'Connect with a mentor to join a pod'} • {podMembers.length} members
+            </p>
           </div>
         </div>
       </div>
@@ -162,13 +142,13 @@ const Community: React.FC<CommunityProps> = ({ isSignedUp = true, onSignup }) =>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{podAverage}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">Pod average</p>
             </div>
-            {myTasksThisWeek < podAverage && (
+            {podMembers.length > 0 && myTasksThisWeek < podAverage && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                 <Target size={14} className="text-amber-600 dark:text-amber-400" />
                 <span className="text-sm text-amber-700 dark:text-amber-300">You're behind the pod average!</span>
               </div>
             )}
-            {myTasksThisWeek >= podAverage && (
+            {podMembers.length > 0 && myTasksThisWeek >= podAverage && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                 <Flame size={14} className="text-emerald-600 dark:text-emerald-400" />
                 <span className="text-sm text-emerald-700 dark:text-emerald-300">You're on track! Keep it up!</span>
@@ -177,40 +157,48 @@ const Community: React.FC<CommunityProps> = ({ isSignedUp = true, onSignup }) =>
           </div>
         </div>
 
-
         {/* Pod Members */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div className="p-4 border-b border-slate-100 dark:border-slate-800">
             <h3 className="font-bold text-slate-900 dark:text-white">Pod Members</h3>
           </div>
-          <div className="divide-y divide-slate-50 dark:divide-slate-800">
-            {podMembers.sort((a, b) => b.tasksCompletedThisWeek - a.tasksCompletedThisWeek).map((member, index) => (
-              <div key={member.id} className={`p-4 flex items-center gap-4 ${member.isMe ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}>
-                <span className="w-6 text-sm font-medium text-slate-400">#{index + 1}</span>
-                <div className={`w-10 h-10 rounded-full ${member.avatar} flex items-center justify-center text-white font-bold`}>
-                  {member.name.charAt(0)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`font-semibold ${member.isMe ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
-                      {member.name}
-                    </span>
-                    {member.isMe && <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">YOU</span>}
-                    {member.currentStreak >= 7 && (
-                      <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <Flame size={10} /> {member.currentStreak} day streak
+          {podMembers.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+              <Users size={32} className="mx-auto mb-2 opacity-50" />
+              <p>Connect with a mentor to join a pod with other freelancers</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50 dark:divide-slate-800">
+              {podMembers.sort((a, b) => b.tasks_this_week - a.tasks_this_week).map((member, index) => (
+                <div key={member.id} className={`p-4 flex items-center gap-4 ${member.is_me ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}>
+                  <span className="w-6 text-sm font-medium text-slate-400">#{index + 1}</span>
+                  <img 
+                    src={getAvatarUrl(member.avatar_url, member.name)} 
+                    alt={member.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-semibold ${member.is_me ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
+                        {member.is_me ? 'You' : member.name}
                       </span>
-                    )}
+                      {member.is_me && <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">YOU</span>}
+                      {member.streak >= 7 && (
+                        <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Flame size={10} /> {member.streak} day streak
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{member.title}</p>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{member.title}</p>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{member.tasks_this_week}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">this week</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">{member.tasksCompletedThisWeek}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">this week</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Pod Activity */}
@@ -219,37 +207,44 @@ const Community: React.FC<CommunityProps> = ({ isSignedUp = true, onSignup }) =>
             <h3 className="font-bold text-slate-900 dark:text-white">Recent Pod Activity</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">See what your pod members have been working on</p>
           </div>
-          <div className="divide-y divide-slate-50 dark:divide-slate-800">
-            {recentActivity.map(activity => (
-              <div key={activity.id} className={`p-4 ${activity.memberName === 'You' ? 'bg-indigo-50/30 dark:bg-indigo-900/5' : ''}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-9 h-9 rounded-full ${activity.memberAvatar} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-                    {activity.memberName.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`font-semibold text-sm ${activity.memberName === 'You' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
-                        {activity.memberName}
-                      </span>
-                      <span className="text-slate-400 text-sm">completed a task</span>
-                      <span className="text-xs text-slate-400 ml-auto shrink-0">{activity.timeAgo}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle size={14} className="text-emerald-500 shrink-0" />
-                      <p className="text-sm text-slate-700 dark:text-slate-300 truncate">{activity.taskTitle}</p>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Target size={12} /> {activity.roadmapStep}
-                      </span>
-                      <span>•</span>
-                      <span>Mentor: {activity.mentorName}</span>
+          {recentActivity.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+              <CheckCircle size={32} className="mx-auto mb-2 opacity-50" />
+              <p>No recent activity yet</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50 dark:divide-slate-800">
+              {recentActivity.map(activity => (
+                <div key={activity.id} className={`p-4 ${activity.is_me ? 'bg-indigo-50/30 dark:bg-indigo-900/5' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <img 
+                      src={getAvatarUrl(activity.user_avatar, activity.user_name)} 
+                      alt={activity.user_name}
+                      className="w-9 h-9 rounded-full object-cover shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`font-semibold text-sm ${activity.is_me ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
+                          {activity.is_me ? 'You' : activity.user_name}
+                        </span>
+                        <span className="text-slate-400 text-sm">completed a task</span>
+                        <span className="text-xs text-slate-400 ml-auto shrink-0">{activity.time_ago}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle size={14} className="text-emerald-500 shrink-0" />
+                        <p className="text-sm text-slate-700 dark:text-slate-300 truncate">{activity.task_title}</p>
+                      </div>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Target size={12} /> {activity.step_title}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Motivation Banner */}

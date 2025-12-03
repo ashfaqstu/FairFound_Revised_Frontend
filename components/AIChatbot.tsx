@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, Sparkles, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Sparkles, Minimize2, GripVertical } from 'lucide-react';
 import { chatWithAI } from '../services/geminiService';
 
 interface AIChatbotProps {
@@ -11,6 +11,11 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+}
+
+interface Position {
+  x: number;
+  y: number;
 }
 
 const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
@@ -28,6 +33,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Drag state
+  const [position, setPosition] = useState<Position>({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,6 +52,100 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
       inputRef.current?.focus();
     }
   }, [isOpen, isMinimized]);
+
+  // Handle window resize to keep bubble in bounds
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition(prev => ({
+        x: Math.min(prev.x, window.innerWidth - (isOpen ? 384 : 56)),
+        y: Math.min(prev.y, window.innerHeight - (isOpen ? 500 : 56))
+      }));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
+
+  // Drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startPosX: position.x,
+      startPosY: position.y
+    };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startPosX: position.x,
+      startPosY: position.y
+    };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !dragRef.current) return;
+      
+      const deltaX = e.clientX - dragRef.current.startX;
+      const deltaY = e.clientY - dragRef.current.startY;
+      
+      const newX = dragRef.current.startPosX + deltaX;
+      const newY = dragRef.current.startPosY + deltaY;
+      
+      // Keep within bounds
+      const maxX = window.innerWidth - (isOpen ? 384 : 56);
+      const maxY = window.innerHeight - (isOpen ? 500 : 56);
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging || !dragRef.current) return;
+      
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - dragRef.current.startX;
+      const deltaY = touch.clientY - dragRef.current.startY;
+      
+      const newX = dragRef.current.startPosX + deltaX;
+      const newY = dragRef.current.startPosY + deltaY;
+      
+      const maxX = window.innerWidth - (isOpen ? 384 : 56);
+      const maxY = window.innerHeight - (isOpen ? 500 : 56);
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      dragRef.current = null;
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging, isOpen]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -96,46 +200,59 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50 group"
+      <div
+        style={{ left: position.x, top: position.y }}
+        className={`fixed z-50 ${isDragging ? 'cursor-grabbing' : ''}`}
       >
-        <Sparkles size={24} className="group-hover:scale-110 transition-transform" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
-      </button>
+        <button
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onClick={() => !isDragging && setIsOpen(true)}
+          className={`w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center group ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab'}`}
+        >
+          <Sparkles size={24} className="group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 ${isMinimized ? 'w-72' : 'w-96'}`}>
+    <div 
+      style={{ left: position.x, top: position.y }}
+      className={`fixed z-50 ${isMinimized ? 'w-72' : 'w-96'}`}
+    >
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 flex items-center justify-between">
+        {/* Header - Draggable */}
+        <div 
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          className={`bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 flex items-center justify-between ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        >
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <Sparkles size={18} className="text-white" />
+              <GripVertical size={16} className="text-white/70" />
             </div>
             <div>
               <h3 className="text-white font-semibold text-sm">AI Assistant</h3>
-              {!isMinimized && <p className="text-indigo-200 text-xs">Ask me anything</p>}
+              {!isMinimized && <p className="text-indigo-200 text-xs">Drag to move • Ask me anything</p>}
             </div>
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setIsMinimized(!isMinimized)}
+              onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
               className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <Minimize2 size={16} />
             </button>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
               className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <X size={16} />
             </button>
           </div>
         </div>
-
 
         {!isMinimized && (
           <>

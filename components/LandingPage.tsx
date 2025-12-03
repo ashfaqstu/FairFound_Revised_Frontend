@@ -6,7 +6,7 @@ import ThemeToggle from './ThemeToggle';
 interface LandingPageProps {
   onStart: () => void;
   onLogin: () => void;
-  onMentorLogin: () => void;
+  onMentorLogin: (email: string, password: string) => Promise<void>;
   isDark: boolean;
   toggleTheme: () => void;
 }
@@ -14,6 +14,10 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLogin, isDark, toggleTheme }) => {
   const [isMentorMode, setIsMentorMode] = useState(false);
   const [mentorAuthTab, setMentorAuthTab] = useState<'login' | 'signup'>('login');
+  const [mentorEmail, setMentorEmail] = useState('');
+  const [mentorPassword, setMentorPassword] = useState('');
+  const [mentorLoading, setMentorLoading] = useState(false);
+  const [mentorError, setMentorError] = useState('');
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
@@ -116,19 +120,59 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                 </div>
                 {mentorAuthTab === 'login' ? (
                   <div className="space-y-4">
+                    {mentorError && (
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        <p className="text-sm text-red-600 dark:text-red-400">{mentorError}</p>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Work Email</label>
-                      <input type="email" placeholder="you@company.com" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                      <input 
+                        type="email" 
+                        placeholder="you@company.com" 
+                        value={mentorEmail}
+                        onChange={(e) => setMentorEmail(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" 
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+                      <input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        value={mentorPassword}
+                        onChange={(e) => setMentorPassword(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" 
+                      />
                     </div>
                     <button
-                      onClick={onMentorLogin}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2"
+                      onClick={async () => {
+                        if (!mentorEmail || !mentorPassword) {
+                          setMentorError('Please enter email and password');
+                          return;
+                        }
+                        setMentorError('');
+                        setMentorLoading(true);
+                        try {
+                          await onMentorLogin(mentorEmail, mentorPassword);
+                        } catch (err) {
+                          setMentorError(err instanceof Error ? err.message : 'Login failed');
+                        } finally {
+                          setMentorLoading(false);
+                        }
+                      }}
+                      disabled={mentorLoading}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-bold transition-colors shadow-lg shadow-emerald-200 dark:shadow-none mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Access Dashboard
+                      {mentorLoading ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Signing in...
+                        </>
+                      ) : 'Access Dashboard'}
                     </button>
                     <p className="text-center text-xs text-slate-400 mt-4">
                       Don't have an account? <button onClick={() => setMentorAuthTab('signup')} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Sign up</button>

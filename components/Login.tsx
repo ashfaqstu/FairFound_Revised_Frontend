@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { UserRole } from '../types';
+import { authAPI } from '../services/api';
 import { Eye, EyeOff, ArrowLeft, Loader2, Lock, Mail } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (role: UserRole) => void;
+  onLogin: (role: UserRole, userData?: { name: string; email: string }) => void;
   onBack: () => void;
   onSignUp: () => void;
 }
@@ -14,15 +14,25 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack, onSignUp }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    // Simulate network delay
-    setTimeout(() => {
+
+    try {
+      const response = await authAPI.login({ email, password });
+      const role = response.user.role === 'mentor' ? UserRole.MENTOR : UserRole.FREELANCER;
+      onLogin(role, { 
+        name: response.user.username, 
+        email: response.user.email 
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+    } finally {
       setLoading(false);
-      onLogin(UserRole.FREELANCER);
-    }, 1500);
+    }
   };
 
   return (
@@ -45,6 +55,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack, onSignUp }) => {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2">Sign in to your FairFound account</p>
           </div>
+
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -87,7 +103,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack, onSignUp }) => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-none"
+              className="w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
             </button>

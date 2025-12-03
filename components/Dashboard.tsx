@@ -14,16 +14,26 @@ interface DashboardProps {
   onNavigate: (view: View) => void;
   isSignedUp?: boolean;
   onSignup?: () => void;
-  onReEvaluate?: (data: { cv?: File; githubUrl?: string; portfolioUrl?: string }) => void;
+  onReEvaluate?: (data: { githubUsername?: string; portfolioUrl?: string }) => Promise<void>;
+  profile?: { name?: string; email?: string; skills?: string[]; experienceYears?: number; hourlyRate?: number; githubUsername?: string; portfolioUrl?: string } | null;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, onNavigate, isSignedUp = true, onSignup, onReEvaluate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, onNavigate, isSignedUp = true, onSignup, onReEvaluate, profile }) => {
   const [showReEvalModal, setShowReEvalModal] = useState(false);
-  const [reEvalStep, setReEvalStep] = useState<'form' | 'loading' | 'success'>('form');
+  const [reEvalStep, setReEvalStep] = useState<'form' | 'loading' | 'success' | 'error'>('form');
   const [cvFile, setCvFile] = useState<File | null>(null);
-  const [githubUrl, setGithubUrl] = useState('');
-  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState(profile?.githubUsername || '');
+  const [portfolioUrl, setPortfolioUrl] = useState(profile?.portfolioUrl || '');
+  const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update form when profile changes
+  React.useEffect(() => {
+    if (profile) {
+      setGithubUrl(profile.githubUsername || '');
+      setPortfolioUrl(profile.portfolioUrl || '');
+    }
+  }, [profile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -31,32 +41,242 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
     }
   };
 
-  const handleReEvaluate = () => {
+  const handleReEvaluate = async () => {
     setReEvalStep('loading');
+    setErrorMessage('');
     
-    // Simulate re-evaluation process
-    setTimeout(() => {
-      setReEvalStep('success');
+    try {
+      // Extract GitHub username from URL if full URL provided
+      let githubUsername = githubUrl;
+      if (githubUrl.includes('github.com/')) {
+        githubUsername = githubUrl.split('github.com/')[1]?.split('/')[0] || githubUrl;
+      }
+
       if (onReEvaluate) {
-        onReEvaluate({ 
-          cv: cvFile || undefined, 
-          githubUrl: githubUrl || undefined, 
+        await onReEvaluate({ 
+          githubUsername: githubUsername || undefined, 
           portfolioUrl: portfolioUrl || undefined 
         });
       }
+      
+      setReEvalStep('success');
       
       // Close modal after success
       setTimeout(() => {
         setShowReEvalModal(false);
         setReEvalStep('form');
         setCvFile(null);
-        setGithubUrl('');
-        setPortfolioUrl('');
       }, 2000);
-    }, 3000);
+    } catch (error: any) {
+      console.error('[DASHBOARD] Re-evaluation failed:', error);
+      setErrorMessage(error.message || 'Failed to re-evaluate profile. Please try again.');
+      setReEvalStep('error');
+    }
   };
 
-  if (!analysis) return <div className="p-8 text-center text-slate-500 dark:text-slate-400">Loading analysis...</div>;
+  // Render the modal even when there's no analysis
+  const renderReEvalModal = () => {
+    if (!showReEvalModal) return null;
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20">
+            <div className="flex items-center gap-2">
+              <RefreshCw size={20} className="text-indigo-600 dark:text-indigo-400" />
+              <h3 className="font-bold text-slate-900 dark:text-white">{analysis ? 'Re-Evaluate Your Profile' : 'Generate Analysis'}</h3>
+            </div>
+            <button 
+              onClick={() => {
+                setShowReEvalModal(false);
+                setReEvalStep('form');
+                setCvFile(null);
+              }}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="p-6">
+            {reEvalStep === 'form' && (
+              <>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                  {analysis 
+                    ? 'Update your GitHub or portfolio URL to get a fresh analysis of your freelance readiness.'
+                    : 'Add your GitHub username and portfolio URL to generate your AI-powered profile analysis.'
+                  }
+                </p>
+
+                {/* CV Upload */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Upload CV (PDF, DOC) - Optional
+                  </label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                  />
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                      cvFile 
+                        ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20' 
+                        : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700'
+                    }`}
+                  >
+                    {cvFile ? (
+                      <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle size={20} />
+                        <span className="font-medium">{cvFile.name}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload size={24} className="mx-auto mb-2 text-slate-400" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Click to upload or drag and drop</p>
+                        <p className="text-xs text-slate-400 mt-1">PDF, DOC up to 10MB</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* GitHub URL */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    GitHub Username or URL
+                  </label>
+                  <div className="relative">
+                    <Github size={18} className="absolute left-3 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      value={githubUrl}
+                      onChange={(e) => setGithubUrl(e.target.value)}
+                      placeholder="yourusername or https://github.com/yourusername"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Portfolio URL */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Portfolio Website URL
+                  </label>
+                  <div className="relative">
+                    <Globe size={18} className="absolute left-3 top-3 text-slate-400" />
+                    <input
+                      type="url"
+                      value={portfolioUrl}
+                      onChange={(e) => setPortfolioUrl(e.target.value)}
+                      placeholder="https://yourportfolio.com"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg mb-6">
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    <strong>Note:</strong> {analysis 
+                      ? 'Re-evaluation will update your Global Readiness Score, skill gaps, and recommendations based on the new data.'
+                      : 'Analysis will generate your Global Readiness Score, identify skill gaps, and provide personalized recommendations.'
+                    }
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleReEvaluate}
+                  className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={18} />
+                  {analysis ? 'Start Re-Evaluation' : 'Generate Analysis'}
+                </button>
+              </>
+            )}
+
+            {reEvalStep === 'loading' && (
+              <div className="py-12 text-center">
+                <Loader2 size={48} className="mx-auto mb-4 text-indigo-600 dark:text-indigo-400 animate-spin" />
+                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Analyzing Your Profile...</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  We're scanning your GitHub repos and portfolio to generate insights.
+                </p>
+                <div className="mt-6 space-y-2 text-left max-w-xs mx-auto">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <CheckCircle size={16} className="text-emerald-500" /> Fetching profile data
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Loader2 size={16} className="text-indigo-500 animate-spin" /> Analyzing GitHub activity
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <div className="w-4 h-4 rounded-full border-2 border-slate-300"></div> Generating AI insights
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {reEvalStep === 'success' && (
+              <div className="py-12 text-center">
+                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={32} className="text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Analysis Complete!</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Your profile has been analyzed. Check your new scores and recommendations!
+                </p>
+              </div>
+            )}
+
+            {reEvalStep === 'error' && (
+              <div className="py-12 text-center">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <X size={32} className="text-red-600 dark:text-red-400" />
+                </div>
+                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Analysis Failed</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                  {errorMessage}
+                </p>
+                <button
+                  onClick={() => setReEvalStep('form')}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!analysis) {
+    return (
+      <>
+        <div className="p-8 max-w-4xl mx-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-12 text-center">
+            <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Target className="text-indigo-600 dark:text-indigo-400" size={36} />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">No Analysis Yet</h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
+              Generate your first AI-powered profile analysis to see your score, market position, and personalized recommendations.
+            </p>
+            <button 
+              onClick={() => setShowReEvalModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw size={18} />
+              Generate Analysis
+            </button>
+          </div>
+        </div>
+        {renderReEvalModal()}
+      </>
+    );
+  }
 
   // Locked section wrapper for non-signed-up users
   const LockedSection: React.FC<{ children: React.ReactNode; title?: string }> = ({ children, title }) => {
@@ -364,155 +584,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
       )}
 
       {/* Re-Evaluation Modal */}
-      {showReEvalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/20">
-              <div className="flex items-center gap-2">
-                <RefreshCw size={20} className="text-indigo-600 dark:text-indigo-400" />
-                <h3 className="font-bold text-slate-900 dark:text-white">Re-Evaluate Your Profile</h3>
-              </div>
-              <button 
-                onClick={() => {
-                  setShowReEvalModal(false);
-                  setReEvalStep('form');
-                  setCvFile(null);
-                }}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              {reEvalStep === 'form' && (
-                <>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
-                    Update your CV, GitHub, or portfolio URL to get a fresh analysis of your freelance readiness.
-                  </p>
-
-                  {/* CV Upload */}
-                  <div className="mb-5">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Upload New CV (PDF, DOC)
-                    </label>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                    />
-                    <div 
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        cvFile 
-                          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20' 
-                          : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700'
-                      }`}
-                    >
-                      {cvFile ? (
-                        <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle size={20} />
-                          <span className="font-medium">{cvFile.name}</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload size={24} className="mx-auto mb-2 text-slate-400" />
-                          <p className="text-sm text-slate-500 dark:text-slate-400">Click to upload or drag and drop</p>
-                          <p className="text-xs text-slate-400 mt-1">PDF, DOC up to 10MB</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* GitHub URL */}
-                  <div className="mb-5">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      GitHub Profile URL
-                    </label>
-                    <div className="relative">
-                      <Github size={18} className="absolute left-3 top-3 text-slate-400" />
-                      <input
-                        type="url"
-                        value={githubUrl}
-                        onChange={(e) => setGithubUrl(e.target.value)}
-                        placeholder="https://github.com/yourusername"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Portfolio URL */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Portfolio Website URL
-                    </label>
-                    <div className="relative">
-                      <Globe size={18} className="absolute left-3 top-3 text-slate-400" />
-                      <input
-                        type="url"
-                        value={portfolioUrl}
-                        onChange={(e) => setPortfolioUrl(e.target.value)}
-                        placeholder="https://yourportfolio.com"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg mb-6">
-                    <p className="text-xs text-amber-700 dark:text-amber-300">
-                      <strong>Note:</strong> Re-evaluation will update your Global Readiness Score, skill gaps, and recommendations based on the new data.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleReEvaluate}
-                    disabled={!cvFile && !githubUrl && !portfolioUrl}
-                    className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw size={18} />
-                    Start Re-Evaluation
-                  </button>
-                </>
-              )}
-
-              {reEvalStep === 'loading' && (
-                <div className="py-12 text-center">
-                  <Loader2 size={48} className="mx-auto mb-4 text-indigo-600 dark:text-indigo-400 animate-spin" />
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Analyzing Your Profile...</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    We're scanning your CV, GitHub repos, and portfolio to generate updated insights.
-                  </p>
-                  <div className="mt-6 space-y-2 text-left max-w-xs mx-auto">
-                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                      <CheckCircle size={16} className="text-emerald-500" /> Parsing CV content
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                      <Loader2 size={16} className="text-indigo-500 animate-spin" /> Analyzing GitHub activity
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-300"></div> Evaluating portfolio
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {reEvalStep === 'success' && (
-                <div className="py-12 text-center">
-                  <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle size={32} className="text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Re-Evaluation Complete!</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Your profile has been updated with the latest analysis. Check your new scores!
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {renderReEvalModal()}
     </div>
   );
 };

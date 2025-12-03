@@ -79,6 +79,12 @@ export interface RoadmapTask {
   resources?: string[];
 }
 
+export interface RoadmapResource {
+  title: string;
+  url: string;
+  type: 'docs' | 'youtube' | 'course' | 'link';
+}
+
 export interface RoadmapStep {
   id: string;
   title: string;
@@ -87,12 +93,14 @@ export interface RoadmapStep {
   status: 'pending' | 'in-progress' | 'completed';
   type: 'skill' | 'project' | 'branding';
   tasks?: RoadmapTask[]; // Tasks for pro mode
+  resources?: RoadmapResource[]; // Learning resources with links
   mentorApproved?: boolean; // Whether a mentor has approved this step
   mentorNotes?: string; // Notes from mentor
 }
 
 export interface Mentor {
   id: string;
+  userId?: number; // The user ID for chat/messaging
   name: string;
   role: string;
   company: string;
@@ -121,12 +129,13 @@ export interface PortfolioContent {
 }
 
 export interface Notification {
-  id: string;
+  id: number;
   title: string;
   message: string;
   time: string;
   read: boolean;
   type: 'info' | 'success' | 'warning';
+  created_at?: string;
 }
 
 export interface ChatAttachment {
@@ -173,6 +182,7 @@ export interface Task {
 
 export interface Mentee {
   id: string;
+  userId?: number; // The user ID for API calls (different from profile id)
   name: string;
   title: string;
   avatarUrl: string;
@@ -181,6 +191,31 @@ export interface Mentee {
   status: 'active' | 'paused';
   roadmap: RoadmapStep[];
   tasks: Task[];
+  skills?: string[];
+  bio?: string;
+  experienceYears?: number;
+  hourlyRate?: number;
+  location?: string;
+  githubUsername?: string;
+  portfolioUrl?: string;
+  analysis?: {
+    overall_score?: number;
+    percentile?: number;
+    strengths?: string[];
+    weaknesses?: string[];
+    skill_gaps?: string[];
+    summary?: string;
+    market_position?: {
+      suggested_hourly_rate?: number;
+      market_demand?: string;
+    };
+    metrics?: {
+      portfolio_score?: number;
+      github_score?: number;
+      skill_score?: number;
+      experience_score?: number;
+    };
+  };
 }
 
 // Session Booking Types

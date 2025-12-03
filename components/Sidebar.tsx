@@ -1,7 +1,9 @@
-
 import React from 'react';
 import { View, UserRole } from '../types';
-import { LayoutDashboard, Map, Users, Lightbulb, LogOut, Briefcase, FileText, Globe, User, CreditCard, MessageSquare, UserCheck, Calendar, BarChart3 } from 'lucide-react';
+import { 
+  LayoutDashboard, Map, Users, Lightbulb, Briefcase, 
+  User, CreditCard, MessageSquare, Calendar, GraduationCap, Globe
+} from 'lucide-react';
 
 interface SidebarProps {
   currentView: View;
@@ -11,29 +13,26 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, userRole }) => {
-  
-  const freelancerItems = [
+  // Main menu items for freelancers
+  const freelancerMainItems = [
     { id: View.DASHBOARD, label: 'Overview', icon: LayoutDashboard },
     { id: View.INSIGHTS, label: 'AI Insights', icon: Lightbulb },
     { id: View.ROADMAP, label: 'My Roadmap', icon: Map },
-    { id: View.PORTFOLIO, label: 'Portfolio Builder', icon: Globe },
-    { id: View.PROPOSALS, label: 'Proposal Writer', icon: FileText },
-    { id: View.SENTIMENT, label: 'Sentiment Analysis', icon: BarChart3 },
-    { id: View.COMMUNITY, label: 'Community', icon: Users },
     { id: View.MENTORS, label: 'Find Mentors', icon: Briefcase },
-    { id: View.MY_MENTOR, label: 'My Mentor', icon: UserCheck },
+    { id: View.MY_MENTOR, label: 'My Mentor', icon: GraduationCap },
+    { id: View.COMMUNITY, label: 'Community', icon: Globe },
     { id: View.PROFILE, label: 'My Profile', icon: User },
   ];
 
   const mentorItems = [
-      { id: View.MENTOR_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-      { id: View.MENTOR_CLIENTS, label: 'My Mentees', icon: Users },
-      { id: View.MENTOR_SESSIONS, label: 'Sessions', icon: Calendar },
-      { id: View.MENTOR_CHAT, label: 'Messages', icon: MessageSquare },
-      { id: View.MENTOR_PROFILE, label: 'Mentor Profile', icon: User },
+    { id: View.MENTOR_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+    { id: View.MENTOR_CLIENTS, label: 'My Mentees', icon: Users },
+    { id: View.MENTOR_SESSIONS, label: 'Sessions', icon: Calendar },
+    { id: View.MENTOR_CHAT, label: 'Messages', icon: MessageSquare },
+    { id: View.MENTOR_PROFILE, label: 'Mentor Profile', icon: User },
   ];
 
-  const menuItems = userRole === UserRole.MENTOR ? mentorItems : freelancerItems;
+  const mainMenuItems = userRole === UserRole.MENTOR ? mentorItems : freelancerMainItems;
 
   return (
     <div className="w-64 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col h-screen fixed left-0 top-0 border-r border-slate-800 shadow-2xl z-20 hidden md:flex transition-colors duration-300">
@@ -56,7 +55,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, use
       </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-        {menuItems.map((item) => {
+        {/* Main Menu Items */}
+        {mainMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
@@ -74,29 +74,23 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isPro, use
             </button>
           );
         })}
+
       </nav>
 
-      <div className="p-4 border-t border-slate-800 mt-auto">
-        {userRole === UserRole.FREELANCER && isPro && (
-           <div className="p-4 bg-emerald-900/20 rounded-xl mb-4 border border-emerald-700/30 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <CreditCard size={14}/>
-              </div>
-              <div>
-                 <h4 className="text-xs font-semibold text-emerald-300">Mentor Connected</h4>
-                 <p className="text-[10px] text-slate-400">Full access unlocked</p>
-              </div>
-           </div>
-        )}
-
-        <button 
-            onClick={() => onChangeView(View.LANDING)}
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors w-full rounded-lg hover:bg-slate-800"
-        >
-          <LogOut size={18} />
-          <span className="text-sm">Sign Out</span>
-        </button>
-      </div>
+      {/* Bottom Section - Pro Badge Only (No Sign Out) */}
+      {userRole === UserRole.FREELANCER && isPro && (
+        <div className="p-4 border-t border-slate-800 mt-auto">
+          <div className="p-4 bg-emerald-900/20 rounded-xl border border-emerald-700/30 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <CreditCard size={14}/>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-emerald-300">Mentor Connected</h4>
+              <p className="text-[10px] text-slate-400">Full access unlocked</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

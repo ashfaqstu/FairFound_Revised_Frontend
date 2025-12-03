@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { Mentor, ChatMessage, RoadmapStep, Session, MentorReview } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Mentor, ChatMessage as LocalChatMessage, RoadmapStep, Session, MentorReview } from '../types';
 import { 
-  Send, Paperclip, Mic, Phone, Video, MoreVertical,
-  FileText, Image, X, Play, Pause, Calendar, Clock, Star,
-  MessageSquare, Download, StopCircle, XCircle, Plus, Check, ExternalLink
+  Send, Paperclip, MoreVertical, Video,
+  FileText, Image, X, Calendar, Clock, Star,
+  MessageSquare, Download, XCircle, Plus, Loader2
 } from 'lucide-react';
+import { chatAPI, ChatMessage, formatMessageTime } from '../services/chatService';
+import { roadmapAPI } from '../services/roadmapService';
+import { mentorDashboardAPI } from '../services/mentorDashboardService';
 
 interface MyMentorProps {
   mentor: Mentor | null;
@@ -14,12 +17,9 @@ interface MyMentorProps {
 
 const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
   const [message, setMessage] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
   const [activeTab, setActiveTab] = useState<'chat' | 'tasks' | 'sessions'>('chat');
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
@@ -27,56 +27,92 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
   const [hoverRating, setHoverRating] = useState(0);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingData, setBookingData] = useState({ date: '', time: '', duration: 45, topic: '' });
-  const [sessions, setSessions] = useState<Session[]>([
-    { id: '1', menteeId: 'me', menteeName: 'Me', menteeAvatar: '', mentorId: 'm1', date: '2024-12-05', time: '15:00', duration: 45, topic: 'Code Review: Dashboard Project', status: 'accepted', meetingLink: 'https://meet.google.com/abc-defg' },
-    { id: '2', menteeId: 'me', menteeName: 'Me', menteeAvatar: '', mentorId: 'm1', date: '2024-11-28', time: '14:00', duration: 60, topic: 'Career Strategy Discussion', status: 'completed' },
-    { id: '3', menteeId: 'me', menteeName: 'Me', menteeAvatar: '', mentorId: 'm1', date: '2024-12-10', time: '10:00', duration: 30, topic: 'Portfolio Review', status: 'pending' },
-  ]);
+  
+  // Real data from backend
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [tasks, setTasks] = useState<RoadmapStep[]>([]);
+  const [chatId, setChatId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Mock data
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      senderId: 'mentor',
-      text: "Hi! Welcome to our mentorship session. I've reviewed your profile and I'm excited to help you grow. Let's start by discussing your goals.",
-      timestamp: '10:30 AM',
-      isMe: false
-    },
-    {
-      id: '2',
-      senderId: 'me',
-      text: "Thank you! I'm really looking forward to improving my React skills and landing better freelance projects.",
-      timestamp: '10:32 AM',
-      isMe: true
-    },
-    {
-      id: '3',
-      senderId: 'mentor',
-      text: "Great goals! I've prepared a customized roadmap for you. Check the Tasks tab for your first assignments.",
-      timestamp: '10:35 AM',
-      isMe: false,
-      attachments: [
-        { id: 'a1', name: 'React_Roadmap_2024.pdf', type: 'file', url: '#', size: '2.4 MB' }
-      ]
-    },
-    {
-      id: '4',
-      senderId: 'me',
-      text: '',
-      timestamp: '10:40 AM',
-      isMe: true,
-      isVoice: true,
-      attachments: [
-        { id: 'v1', name: 'Voice message', type: 'voice', url: '#', duration: '0:45' }
-      ]
+  // Load data on mount
+  useEffect(() => {
+    if (mentor) {
+      loadData();
     }
-  ]);
+  }, [mentor]);
 
-  const mockTasks: RoadmapStep[] = [
-    { id: '1', title: 'Complete React Hooks Deep Dive', description: 'Watch the advanced hooks tutorial and build 3 custom hooks', duration: '1 week', status: 'in-progress', type: 'skill' },
-    { id: '2', title: 'Portfolio Project: Dashboard App', description: 'Build a data visualization dashboard using React and Recharts', duration: '2 weeks', status: 'pending', type: 'project' },
-    { id: '3', title: 'Update LinkedIn Profile', description: 'Optimize your profile with new skills and project showcases', duration: '2 days', status: 'pending', type: 'branding' },
-  ];
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const loadData = async () => {
+    if (!mentor) return;
+    try {
+      setLoading(true);
+      
+      // Get or create chat with mentor using their user ID
+      const mentorUserId = mentor.userId;
+      if (mentorUserId) {
+        try {
+          const chat = await chatAPI.getOrCreateChat(mentorUserId);
+          setChatId(chat.id);
+          
+          // Load messages
+          const msgs = await chatAPI.getMessages(chat.id);
+          setMessages(msgs);
+        } catch {
+          console.log('[MY MENTOR] Could not load chat');
+        }
+      } else {
+        console.log('[MY MENTOR] No user ID for mentor, skipping chat');
+      }
+      
+      // Load roadmap/tasks
+      try {
+        const roadmapData = await roadmapAPI.getRoadmap();
+        setTasks(roadmapData.map((s: any) => ({
+          id: String(s.id),
+          title: s.title,
+          description: s.description,
+          duration: s.duration,
+          status: s.status,
+          type: s.type
+        })));
+      } catch {
+        console.log('[MY MENTOR] Could not load tasks');
+      }
+      
+      // Load sessions
+      try {
+        const sessionsData = await mentorDashboardAPI.getSessions();
+        const sessionsList = Array.isArray(sessionsData) ? sessionsData : [];
+        setSessions(sessionsList.map((s: any) => ({
+          id: String(s.id),
+          menteeId: String(s.mentee),
+          menteeName: s.mentee_name || 'Unknown',
+          menteeAvatar: s.mentee_avatar || '',
+          mentorId: String(s.mentor),
+          date: s.date,
+          time: s.time,
+          duration: s.duration,
+          topic: s.topic || 'Session',
+          status: s.status,
+          meetingLink: s.meeting_link
+        })));
+      } catch (err) {
+        console.log('[MY MENTOR] Could not load sessions:', err);
+        setSessions([]);
+      }
+    } catch (err) {
+      console.error('[MY MENTOR] Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Mentor's available hours (would come from mentor profile in real app)
   const mentorAvailability = {
@@ -88,27 +124,52 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
     sessionDuration: 45
   };
 
-  const handleBookSession = () => {
-    if (!bookingData.date || !bookingData.time || !bookingData.topic) return;
-    const newSession: Session = {
-      id: `session-${Date.now()}`,
-      menteeId: 'me',
-      menteeName: 'Me',
-      menteeAvatar: '',
-      mentorId: mentor?.id || '',
-      date: bookingData.date,
-      time: bookingData.time,
-      duration: bookingData.duration,
-      topic: bookingData.topic,
-      status: 'pending'
-    };
-    setSessions(prev => [newSession, ...prev]);
-    setBookingData({ date: '', time: '', duration: 45, topic: '' });
-    setShowBookingModal(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  const handleBookSession = async () => {
+    if (!bookingData.date || !bookingData.time || !bookingData.topic || !mentor) return;
+    
+    try {
+      setBookingLoading(true);
+      const sessionData = await mentorDashboardAPI.createSession({
+        mentor: Number(mentor.id),
+        date: bookingData.date,
+        time: bookingData.time,
+        duration: bookingData.duration,
+        topic: bookingData.topic,
+      });
+      
+      const newSession: Session = {
+        id: String(sessionData.id),
+        menteeId: String(sessionData.mentee),
+        menteeName: sessionData.mentee_name || 'Me',
+        menteeAvatar: sessionData.mentee_avatar || '',
+        mentorId: String(sessionData.mentor),
+        date: sessionData.date,
+        time: sessionData.time,
+        duration: sessionData.duration,
+        topic: sessionData.topic,
+        status: sessionData.status,
+        meetingLink: sessionData.meeting_link || undefined
+      };
+      setSessions(prev => [newSession, ...prev]);
+      setBookingData({ date: '', time: '', duration: 45, topic: '' });
+      setShowBookingModal(false);
+    } catch (err) {
+      console.error('[MY MENTOR] Error booking session:', err);
+      alert('Failed to book session. Please try again.');
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
-  const handleCancelSession = (sessionId: string) => {
-    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'cancelled' } : s));
+  const handleCancelSession = async (sessionId: string) => {
+    try {
+      await mentorDashboardAPI.updateSessionStatus(Number(sessionId), 'cancelled');
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'cancelled' } : s));
+    } catch (err) {
+      console.error('[MY MENTOR] Error cancelling session:', err);
+    }
   };
 
   const formatSessionDate = (dateStr: string) => {
@@ -127,27 +188,30 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
     }
   };
 
-  const handleSend = () => {
-    if (!message.trim() && attachments.length === 0) return;
+  const handleSend = async () => {
+    if ((!message.trim() && attachments.length === 0) || !chatId || sending) return;
     
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      senderId: 'me',
-      text: message,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isMe: true,
-      attachments: attachments.map((f, i) => ({
-        id: `att-${i}`,
-        name: f.name,
-        type: f.type.startsWith('image') ? 'image' : 'file',
-        url: URL.createObjectURL(f),
-        size: `${(f.size / 1024).toFixed(1)} KB`
-      }))
-    };
-    
-    setMessages([...messages, newMessage]);
-    setMessage('');
-    setAttachments([]);
+    try {
+      setSending(true);
+      let newMessage: ChatMessage;
+      
+      if (attachments.length > 0) {
+        for (const file of attachments) {
+          const type = file.type.startsWith('image') ? 'image' : 'file';
+          newMessage = await chatAPI.uploadAttachment(chatId, file, type, message);
+        }
+      } else {
+        newMessage = await chatAPI.sendMessage(chatId, message);
+      }
+      
+      setMessages(prev => [...prev, newMessage!]);
+      setMessage('');
+      setAttachments([]);
+    } catch (err) {
+      console.error('[MY MENTOR] Error sending message:', err);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,31 +224,16 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      // Stop recording and send voice message
-      const voiceMessage: ChatMessage = {
-        id: Date.now().toString(),
-        senderId: 'me',
-        text: '',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isMe: true,
-        isVoice: true,
-        attachments: [{
-          id: `voice-${Date.now()}`,
-          name: 'Voice message',
-          type: 'voice',
-          url: '#',
-          duration: `0:${recordingTime.toString().padStart(2, '0')}`
-        }]
-      };
-      setMessages([...messages, voiceMessage]);
-      setRecordingTime(0);
-    }
-    setIsRecording(!isRecording);
+  const handleDownload = (url: string, filename: string) => {
+    const fullUrl = url.startsWith('http') ? url : `http://localhost:8000${url}`;
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
-
-  // Recording timer effect would go here in real implementation
 
   if (!mentor) {
     return (
@@ -227,19 +276,7 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="grid grid-cols-2 gap-2">
-            <button className="flex items-center justify-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
-              <Video size={18} />
-              Video Call
-            </button>
-            <button className="flex items-center justify-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <Phone size={18} />
-              Voice Call
-            </button>
-          </div>
-        </div>
+
 
         {/* Tabs */}
         <div className="flex border-b border-slate-100 dark:border-slate-800">
@@ -262,7 +299,11 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'tasks' && (
             <div className="p-4 space-y-3">
-              {mockTasks.map((task) => (
+              {tasks.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <p>No tasks assigned yet</p>
+                </div>
+              ) : tasks.map((task) => (
                 <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                   <div className="flex items-start gap-2 mb-2">
                     <div className={`w-2 h-2 rounded-full mt-1.5 ${
@@ -598,11 +639,20 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
 
               <button 
                 onClick={handleBookSession}
-                disabled={!bookingData.date || !bookingData.time || !bookingData.topic}
+                disabled={!bookingData.date || !bookingData.time || !bookingData.topic || bookingLoading}
                 className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Calendar size={18} />
-                Request Session
+                {bookingLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Booking...
+                  </>
+                ) : (
+                  <>
+                    <Calendar size={18} />
+                    Request Session
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -695,7 +745,10 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
                             <p className={`text-xs ${msg.isMe ? 'text-white/70' : 'text-slate-500'}`}>{att.size}</p>
                           )}
                         </div>
-                        <button className={`p-1.5 rounded-lg ${msg.isMe ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                        <button 
+                          onClick={() => handleDownload(att.url, att.name)}
+                          className={`p-1.5 rounded-lg ${msg.isMe ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                        >
                           <Download size={16} className={msg.isMe ? 'text-white' : 'text-slate-500'} />
                         </button>
                       </div>
@@ -730,68 +783,46 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
 
         {/* Input Area */}
         <div className="px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-          {isRecording ? (
-            <div className="flex items-center gap-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-red-600 dark:text-red-400 font-medium">Recording... 0:{recordingTime.toString().padStart(2, '0')}</span>
-              <div className="flex-1"></div>
-              <button 
-                onClick={toggleRecording}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <StopCircle size={18} />
-                Stop & Send
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-end gap-3">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                className="hidden"
-                multiple
+          <div className="flex items-end gap-3">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              className="hidden"
+              multiple
+            />
+            
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="p-3 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            >
+              <Paperclip size={20} />
+            </button>
+
+            <div className="flex-1 relative">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="Type a message..."
+                rows={1}
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               />
-              
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="p-3 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-              >
-                <Paperclip size={20} />
-              </button>
-
-              <div className="flex-1 relative">
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  placeholder="Type a message..."
-                  rows={1}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                />
-              </div>
-
-              <button 
-                onClick={toggleRecording}
-                className="p-3 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-              >
-                <Mic size={20} />
-              </button>
-
-              <button 
-                onClick={handleSend}
-                disabled={!message.trim() && attachments.length === 0}
-                className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send size={20} />
-              </button>
             </div>
-          )}
+
+            <button 
+              onClick={handleSend}
+              disabled={(!message.trim() && attachments.length === 0) || sending}
+              className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+            </button>
+          </div>
         </div>
       </div>
     </div>

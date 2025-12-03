@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { FreelancerProfile } from '../types';
+import { authAPI } from '../services/api';
 import { Eye, EyeOff, ArrowLeft, Loader2, Lock, Mail, User } from 'lucide-react';
 
 interface SignupProps {
   profile: FreelancerProfile | null;
-  onSignup: (username: string, password: string) => void;
+  onSignup: (username: string, email: string) => void;
   onBack: () => void;
   onStartFreeAnalysis?: () => void;
+  onGoToOnboarding?: () => void;
 }
 
-const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeAnalysis }) => {
+const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeAnalysis, onGoToOnboarding }) => {
   const [username, setUsername] = useState(profile?.email?.split('@')[0] || '');
   const [email, setEmail] = useState(profile?.email || '');
   const [password, setPassword] = useState('');
@@ -18,7 +20,7 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeA
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -33,10 +35,24 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeA
     }
 
     setLoading(true);
-    setTimeout(() => {
+    console.log('[SIGNUP] Creating account for:', email);
+
+    try {
+      const response = await authAPI.signup({
+        username,
+        email,
+        password,
+        password_confirm: confirmPassword,
+        role: 'freelancer'
+      });
+      console.log('[SIGNUP] ✅ Account created:', response.user.username);
+      onSignup(username, email);
+    } catch (err) {
+      console.error('[SIGNUP] ❌ Signup failed:', err);
+      setError(err instanceof Error ? err.message : 'Signup failed. Please try again.');
+    } finally {
       setLoading(false);
-      onSignup(username, password);
-    }, 1500);
+    }
   };
 
   return (
@@ -65,6 +81,12 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeA
               <p className="text-sm text-indigo-700 dark:text-indigo-300">
                 Welcome, <span className="font-semibold">{profile.name}</span>! Just set up your login credentials to save your progress.
               </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 
@@ -136,14 +158,10 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeA
               </div>
             </div>
 
-            {error && (
-              <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
-            )}
-
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-none mt-2"
+              className="w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-none mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : 'Create Account'}
             </button>
@@ -155,7 +173,7 @@ const Signup: React.FC<SignupProps> = ({ profile, onSignup, onBack, onStartFreeA
             </div>
             <button
               type="button"
-              onClick={onStartFreeAnalysis}
+              onClick={onStartFreeAnalysis || onGoToOnboarding}
               className="w-full py-3.5 rounded-xl font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:text-indigo-400 border border-indigo-200 dark:border-slate-700 transition-colors"
             >
               Start Analysis For Free
