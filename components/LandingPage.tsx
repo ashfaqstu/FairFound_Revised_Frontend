@@ -355,13 +355,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                 </div>
                 
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight max-w-4xl mx-auto leading-tight">
-                    Set Your Goal<br/>
+                    Mentor Up . Level Up<br/>
                   
                 </h1>
                 <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-16 max-w-4xl mx-auto leading-tight">
                     
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500 dark:from-indigo-400 dark:to-blue-400">
-                    Steer Your Freelance Journey.
+                    Steer Your Freelance Journey
                     </span>
                 </span>
                 

@@ -40,17 +40,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // Drag state
-  // Position above bottom nav on mobile (80px from bottom), normal on desktop
-  const getInitialPosition = () => {
-    const isMobileDevice = window.innerWidth < 768;
-    const bottomOffset = isMobileDevice ? 80 : 0;
-    return { 
-      x: window.innerWidth - 80, 
-      y: window.innerHeight - 80 - bottomOffset 
-    };
-  };
-  const [position, setPosition] = useState<Position>(getInitialPosition);
+  const [position, setPosition] = useState<Position>({ x: window.innerWidth - 420, y: window.innerHeight - 580 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null);
 
@@ -68,25 +58,22 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
     }
   }, [isOpen, isMinimized]);
 
-  // Check if mobile
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Handle window resize to keep bubble in bounds
+  const handleScroll = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+    }
+  }, []);
+
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      
-      // On mobile, position above bottom nav (64px nav + 16px padding)
-      const bottomOffset = mobile ? 80 : 0;
-      
-      setPosition(prev => ({
-        x: Math.min(prev.x, window.innerWidth - (isOpen ? (mobile ? window.innerWidth - 16 : 384) : 56)),
-        y: Math.min(prev.y, window.innerHeight - (isOpen ? (mobile ? 450 : 500) : 56) - bottomOffset)
+      setPosition((prev: Position) => ({
+        x: Math.min(prev.x, window.innerWidth - (isOpen ? 384 : 56)),
+        y: Math.min(prev.y, window.innerHeight - (isOpen ? 500 : 56))
       }));
     };
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial call
     return () => window.removeEventListener('resize', handleResize);
   }, [isOpen]);
 
@@ -217,14 +204,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
     return (
       <div style={{ left: position.x, top: position.y }} className={`fixed z-50 ${isDragging ? 'cursor-grabbing' : ''}`}>
         <button
-          onMouseDown={!isMobile ? handleMouseDown : undefined}
-          onTouchStart={!isMobile ? handleTouchStart : undefined}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
           onClick={() => !isDragging && setIsOpen(true)}
           className={`w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center group ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab'}`}
           aria-label="Open AI Assistant"
         >
-          <Sparkles size={isMobile ? 20 : 24} className="group-hover:scale-110 transition-transform" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
+          <Sparkles size={24} className="group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
         </button>
       </div>
     );
