@@ -416,7 +416,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin, onMentorLog
                       ))}
                     </ul>
                     <div className="flex items-end gap-2 mb-1">
-                      <span className="text-4xl font-bold text-slate-900 dark:text-white"> $30-$100</span>
+                      <span className="text-4xl font-bold text-slate-900 dark:text-white">$30-$200</span>
                       
                     </div>
                     <div className="text-xs text-slate-400 mb-6">Per mentorship </div>
