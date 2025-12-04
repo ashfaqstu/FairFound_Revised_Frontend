@@ -4,6 +4,7 @@ import {
   Trash2, RotateCcw, Copy, Check, ChevronDown, Bot, User
 } from 'lucide-react';
 import { quickChat } from '../services/aiChatService';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface AIChatbotProps {
   pageContext: string;
@@ -262,7 +263,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ pageContext }) => {
                     </div>
                     <div className="group relative">
                       <div className={`px-4 py-2.5 rounded-2xl text-sm ${message.role === 'user' ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-bl-md'}`}>
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        {message.role === 'assistant' ? (
+                          <MarkdownRenderer content={message.content} className="text-sm" />
+                        ) : (
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        )}
                       </div>
                       {message.role === 'assistant' && (
                         <div className="absolute -bottom-6 left-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">

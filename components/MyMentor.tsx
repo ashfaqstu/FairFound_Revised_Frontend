@@ -18,7 +18,7 @@ interface MyMentorProps {
 
 const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
   const [message, setMessage] = useState('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'tasks' | 'sessions'>('chat');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -108,6 +108,14 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
         console.log('[MY MENTOR] Could not load sessions:', err);
         setSessions([]);
       }
+      
+      // Load mentor's availability
+      try {
+        const availability = await mentorDashboardAPI.getMentorAvailability(Number(mentor.id));
+        setMentorAvailability(availability);
+      } catch (err) {
+        console.log('[MY MENTOR] Could not load mentor availability:', err);
+      }
     } catch (err) {
       console.error('[MY MENTOR] Error loading data:', err);
     } finally {
@@ -115,15 +123,16 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
     }
   };
 
-  // Mentor's available hours (would come from mentor profile in real app)
-  const mentorAvailability = {
-    slots: [
-      { day: 'monday', startTime: '09:00', endTime: '17:00' },
-      { day: 'wednesday', startTime: '09:00', endTime: '17:00' },
-      { day: 'friday', startTime: '10:00', endTime: '15:00' }
-    ],
-    sessionDuration: 45
-  };
+  // Mentor's available hours from backend
+  const [mentorAvailability, setMentorAvailability] = useState<{
+    slots: { day: string; startTime: string; endTime: string }[];
+    session_duration: number;
+    timezone: string;
+  }>({
+    slots: [],
+    session_duration: 45,
+    timezone: 'America/New_York'
+  });
 
   const [bookingLoading, setBookingLoading] = useState(false);
 
@@ -281,7 +290,7 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
 
         {/* Tabs */}
         <div className="flex border-b border-slate-100 dark:border-slate-800">
-          {(['chat', 'tasks', 'sessions'] as const).map((tab) => (
+          {(['tasks', 'sessions'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -291,7 +300,7 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'tasks' ? 'Roadmap Steps' : 'Sessions'}
             </button>
           ))}
         </div>
@@ -373,12 +382,6 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
             </div>
           )}
 
-          {activeTab === 'chat' && (
-            <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-              <MessageSquare size={24} className="mx-auto mb-2 opacity-50" />
-              Chat history in main panel
-            </div>
-          )}
         </div>
 
         {/* Cancel Contract Button */}
@@ -571,13 +574,17 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
               {/* Mentor Availability Info */}
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Mentor's Available Hours</p>
-                <div className="flex flex-wrap gap-2">
-                  {mentorAvailability.slots.map((slot, idx) => (
-                    <span key={idx} className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded capitalize">
-                      {slot.day}: {slot.startTime} - {slot.endTime}
-                    </span>
-                  ))}
-                </div>
+                {mentorAvailability.slots.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {mentorAvailability.slots.map((slot, idx) => (
+                      <span key={idx} className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded capitalize">
+                        {slot.day}: {slot.startTime} - {slot.endTime}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">No availability set. Contact mentor directly.</p>
+                )}
               </div>
 
               <div>
@@ -676,35 +683,28 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] ${msg.isMe ? 'order-2' : ''}`}>
+            <div key={msg.id} className={`flex ${msg.is_me ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[70%] ${msg.is_me ? 'order-2' : ''}`}>
                 {/* Voice Message */}
-                {msg.isVoice && msg.attachments?.[0] && (
+                {msg.attachments?.[0]?.type === 'voice' && (
                   <div className={`p-3 rounded-2xl ${
-                    msg.isMe 
+                    msg.is_me 
                       ? 'bg-indigo-600 text-white' 
                       : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
                   }`}>
                     <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => setPlayingVoice(playingVoice === msg.id ? null : msg.id)}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          msg.isMe ? 'bg-white/20' : 'bg-indigo-100 dark:bg-indigo-900/30'
-                        }`}
-                      >
-                        {playingVoice === msg.id ? (
-                          <Pause size={18} className={msg.isMe ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
-                        ) : (
-                          <Play size={18} className={msg.isMe ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
-                        )}
-                      </button>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        msg.is_me ? 'bg-white/20' : 'bg-indigo-100 dark:bg-indigo-900/30'
+                      }`}>
+                        <span className="text-xs">🎤</span>
+                      </div>
                       <div className="flex-1">
-                        <div className={`h-1 rounded-full ${msg.isMe ? 'bg-white/30' : 'bg-slate-200 dark:bg-slate-600'}`}>
-                          <div className={`h-full w-1/3 rounded-full ${msg.isMe ? 'bg-white' : 'bg-indigo-500'}`}></div>
+                        <div className={`h-1 rounded-full ${msg.is_me ? 'bg-white/30' : 'bg-slate-200 dark:bg-slate-600'}`}>
+                          <div className={`h-full w-1/3 rounded-full ${msg.is_me ? 'bg-white' : 'bg-indigo-500'}`}></div>
                         </div>
                       </div>
-                      <span className={`text-xs ${msg.isMe ? 'text-white/70' : 'text-slate-500'}`}>
-                        {msg.attachments[0].duration}
+                      <span className={`text-xs ${msg.is_me ? 'text-white/70' : 'text-slate-500'}`}>
+                        {msg.attachments[0]?.duration || '0:00'}
                       </span>
                     </div>
                   </div>
@@ -713,7 +713,7 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
                 {/* Text Message */}
                 {msg.text && (
                   <div className={`p-4 rounded-2xl ${
-                    msg.isMe 
+                    msg.is_me 
                       ? 'bg-indigo-600 text-white rounded-br-md' 
                       : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-bl-md'
                   }`}>
@@ -722,43 +722,43 @@ const MyMentor: React.FC<MyMentorProps> = ({ mentor, onCancelContract }) => {
                 )}
 
                 {/* File Attachments */}
-                {msg.attachments && !msg.isVoice && msg.attachments.length > 0 && (
+                {msg.attachments && msg.attachments.length > 0 && msg.attachments[0]?.type !== 'voice' && (
                   <div className="mt-2 space-y-2">
                     {msg.attachments.map((att) => (
                       <div 
                         key={att.id}
                         className={`flex items-center gap-3 p-3 rounded-xl ${
-                          msg.isMe 
+                          msg.is_me 
                             ? 'bg-indigo-500/80' 
                             : 'bg-slate-100 dark:bg-slate-800'
                         }`}
                       >
                         {att.type === 'image' ? (
-                          <Image size={20} className={msg.isMe ? 'text-white' : 'text-slate-500'} />
+                          <Image size={20} className={msg.is_me ? 'text-white' : 'text-slate-500'} />
                         ) : (
-                          <FileText size={20} className={msg.isMe ? 'text-white' : 'text-slate-500'} />
+                          <FileText size={20} className={msg.is_me ? 'text-white' : 'text-slate-500'} />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${msg.isMe ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                          <p className={`text-sm font-medium truncate ${msg.is_me ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                             {att.name}
                           </p>
                           {att.size && (
-                            <p className={`text-xs ${msg.isMe ? 'text-white/70' : 'text-slate-500'}`}>{att.size}</p>
+                            <p className={`text-xs ${msg.is_me ? 'text-white/70' : 'text-slate-500'}`}>{att.size}</p>
                           )}
                         </div>
                         <button 
                           onClick={() => handleDownload(att.url, att.name)}
-                          className={`p-1.5 rounded-lg ${msg.isMe ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                          className={`p-1.5 rounded-lg ${msg.is_me ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                         >
-                          <Download size={16} className={msg.isMe ? 'text-white' : 'text-slate-500'} />
+                          <Download size={16} className={msg.is_me ? 'text-white' : 'text-slate-500'} />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <p className={`text-xs mt-1 ${msg.isMe ? 'text-right text-slate-400' : 'text-slate-400'}`}>
-                  {msg.timestamp}
+                <p className={`text-xs mt-1 ${msg.is_me ? 'text-right text-slate-400' : 'text-slate-400'}`}>
+                  {formatMessageTime(msg.created_at)}
                 </p>
               </div>
             </div>

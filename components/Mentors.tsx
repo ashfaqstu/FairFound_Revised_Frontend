@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, MessageCircle, CheckCircle, UserPlus, X, UserCheck, ArrowRight, ThumbsUp, Loader2 } from 'lucide-react';
+import { Star, MessageCircle, CheckCircle, UserPlus, X, UserCheck, ArrowRight, ThumbsUp, Loader2, Send } from 'lucide-react';
 import { Mentor, MentorReview } from '../types';
 import { mentorAPI, mapMentorToFrontend, mapReviewToFrontend, MentorData } from '../services/mentorService';
 
@@ -35,6 +35,12 @@ const Mentors: React.FC<MentorsProps> = ({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [specialtyFilter, setSpecialtyFilter] = useState<string>('all');
+  const [cancelling, setCancelling] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [cancelledMentor, setCancelledMentor] = useState<Mentor | null>(null);
 
   // Fetch mentors from backend
   useEffect(() => {
@@ -109,6 +115,57 @@ const Mentors: React.FC<MentorsProps> = ({
     setReviewsMentor(mentor);
     setShowReviewsModal(true);
     await fetchReviews(mentor.id);
+  };
+
+  const handleCancelMentorship = async () => {
+    if (!connectedMentor) return;
+    try {
+      setCancelling(true);
+      await mentorAPI.disconnectMentor(Number(connectedMentor.id));
+      // Store the mentor for review modal
+      setCancelledMentor(connectedMentor);
+      setShowCancelModal(false);
+      // Show review modal
+      setShowReviewModal(true);
+      // Notify parent to clear connected mentor
+      onCancelContract?.();
+    } catch (err: any) {
+      console.error('[MENTORS] Error cancelling mentorship:', err);
+      setError(err.message || 'Failed to cancel mentorship');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!cancelledMentor || reviewRating === 0) return;
+    try {
+      setSubmittingReview(true);
+      await mentorAPI.submitReview(Number(cancelledMentor.id), reviewRating, reviewComment);
+      // Refresh reviews for this mentor
+      const reviews = await mentorAPI.getMentorReviews(Number(cancelledMentor.id));
+      const mapped = reviews.map(mapReviewToFrontend);
+      setMentorReviews(prev => ({ ...prev, [cancelledMentor.id]: mapped }));
+      // Refresh mentors list to get updated rating
+      await fetchMentors();
+      // Close modal and reset
+      setShowReviewModal(false);
+      setReviewRating(0);
+      setReviewComment('');
+      setCancelledMentor(null);
+    } catch (err: any) {
+      console.error('[MENTORS] Error submitting review:', err);
+      setError(err.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleSkipReview = () => {
+    setShowReviewModal(false);
+    setReviewRating(0);
+    setReviewComment('');
+    setCancelledMentor(null);
   };
 
   const getMentorReviews = (mentorId: string): MentorReview[] => {
@@ -257,8 +314,98 @@ const Mentors: React.FC<MentorsProps> = ({
                 <button onClick={() => setShowCancelModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                   Keep Mentor
                 </button>
-                <button onClick={() => { setShowCancelModal(false); onCancelContract?.(); }} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors">
-                  Cancel Contract
+                <button 
+                  onClick={handleCancelMentorship} 
+                  disabled={cancelling}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {cancelling ? <><Loader2 size={16} className="animate-spin" /> Cancelling...</> : 'Cancel Contract'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal - shown after cancellation */}
+      {showReviewModal && cancelledMentor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-amber-50 dark:bg-amber-900/20">
+              <div className="flex items-center gap-2">
+                <Star size={20} className="text-amber-500" />
+                <h3 className="font-bold text-slate-900 dark:text-white">Rate Your Experience</h3>
+              </div>
+              <button onClick={handleSkipReview} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <img src={cancelledMentor.imageUrl} alt={cancelledMentor.name} className="w-14 h-14 rounded-full border-2 border-amber-100" />
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white">{cancelledMentor.name}</p>
+                  <p className="text-sm text-slate-500">{cancelledMentor.role} at {cancelledMentor.company}</p>
+                </div>
+              </div>
+              
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                How was your mentorship experience? Your feedback helps other users find the right mentor.
+              </p>
+
+              {/* Star Rating */}
+              <div className="flex justify-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewRating(star)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Star 
+                      size={36} 
+                      className={star <= reviewRating 
+                        ? 'text-amber-400 fill-amber-400' 
+                        : 'text-slate-300 dark:text-slate-600 hover:text-amber-300'
+                      } 
+                    />
+                  </button>
+                ))}
+              </div>
+              
+              {reviewRating > 0 && (
+                <p className="text-center text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
+                  {reviewRating === 1 && 'Poor'}
+                  {reviewRating === 2 && 'Fair'}
+                  {reviewRating === 3 && 'Good'}
+                  {reviewRating === 4 && 'Very Good'}
+                  {reviewRating === 5 && 'Excellent'}
+                </p>
+              )}
+
+              {/* Comment */}
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Share your experience with this mentor (optional)..."
+                className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                rows={4}
+              />
+
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={handleSkipReview}
+                  className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Skip
+                </button>
+                <button 
+                  onClick={handleSubmitReview}
+                  disabled={reviewRating === 0 || submittingReview}
+                  className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {submittingReview ? (
+                    <><Loader2 size={16} className="animate-spin" /> Submitting...</>
+                  ) : (
+                    <><Send size={16} /> Submit Review</>
+                  )}
                 </button>
               </div>
             </div>

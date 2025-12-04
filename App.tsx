@@ -12,9 +12,7 @@ import Roadmap from './components/Roadmap';
 import Mentors from './components/Mentors';
 import MyMentor from './components/MyMentor';
 import Insights from './components/Insights';
-import PortfolioBuilder from './components/PortfolioBuilder';
-import ProposalGenerator from './components/ProposalGenerator';
-import SentimentAnalyzer from './components/SentimentAnalyzer';
+
 import Community from './components/Community';
 import LandingPage from './components/LandingPage';
 import Breadcrumbs from './components/Breadcrumbs';
@@ -31,7 +29,9 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import AIChatbot from './components/AIChatbot';
 import BottomNavigation from './components/BottomNavigation';
-import { Bell, Search, X, Menu } from 'lucide-react';
+import CommandPalette from './components/CommandPalette';
+
+import { Bell, Search, X, Command } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.LANDING);
@@ -54,7 +54,19 @@ const App: React.FC = () => {
     badges: ['Early Adopter']
   });
   const [connectedMentor, setConnectedMentor] = useState<Mentor | null>(null);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  // Global keyboard shortcut for command palette (Ctrl/Cmd + K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Load theme from local storage
   useEffect(() => {
@@ -655,6 +667,8 @@ const App: React.FC = () => {
               const mentorId = Number(connectedMentor.id);
               console.log('[APP] Starting contract cancellation for mentor ID:', mentorId);
               
+              let disconnectSuccess = false;
+              
               try {
                 // Submit review if provided
                 if (review && review.rating > 0) {
@@ -669,32 +683,38 @@ const App: React.FC = () => {
                 const { mentorAPI } = await import('./services/mentorService');
                 const result = await mentorAPI.disconnectMentor(mentorId);
                 console.log('[APP] ✅ Disconnect result:', result);
-              } catch (err) {
+                disconnectSuccess = true;
+              } catch (err: any) {
                 console.error('[APP] ❌ Error during disconnect:', err);
-                // Still proceed with local state cleanup even if API fails
+                addNotification({
+                  id: Date.now(),
+                  title: 'Error',
+                  message: err.message || 'Failed to cancel contract. Please try again.',
+                  time: 'Just now',
+                  read: false,
+                  type: 'warning'
+                });
+                return; // Don't clear local state if API failed
+              }
+              
+              // Only clear local state if disconnect was successful
+              if (disconnectSuccess) {
+                setConnectedMentor(null);
+                setIsPro(false);
+                setCurrentView(View.MENTORS);
+                addNotification({
+                  id: Date.now(),
+                  title: 'Contract Cancelled',
+                  message: review?.rating ? 'Thank you for your review! Your mentorship has been cancelled.' : 'Your mentorship has been cancelled. You can now connect with a new mentor.',
+                  time: 'Just now',
+                  read: false,
+                  type: 'info'
+                });
               }
             }
-            
-            // Clear local state
-            setConnectedMentor(null);
-            setIsPro(false);
-            setCurrentView(View.MENTORS);
-            addNotification({
-              id: Date.now(),
-              title: 'Contract Cancelled',
-              message: review?.rating ? 'Thank you for your review! Your mentorship has been cancelled.' : 'Your mentorship has been cancelled. You can now connect with a new mentor.',
-              time: 'Just now',
-              read: false,
-              type: 'info'
-            });
           }}
         />;
-      case View.PORTFOLIO:
-        return <PortfolioBuilder profile={profile} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
-      case View.PROPOSALS:
-        return <ProposalGenerator profile={profile} isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
-      case View.SENTIMENT:
-        return <SentimentAnalyzer isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
+
       case View.COMMUNITY:
         return <Community isSignedUp={isSignedUp} onSignup={() => setCurrentView(View.SIGNUP)} />;
       case View.PRICING:
@@ -851,11 +871,17 @@ const App: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-2 md:gap-6">
-                {/* Desktop Search */}
-                <div className="hidden lg:flex items-center bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 w-64 transition-colors">
-                  <Search size={16} className="text-slate-400 mr-2" />
-                  <input type="text" placeholder="Search..." className="bg-transparent text-sm outline-none text-slate-700 dark:text-slate-200 w-full placeholder-slate-400 dark:placeholder-slate-500" />
-                </div>
+                {/* Desktop Search - Opens Command Palette */}
+                <button
+                  onClick={() => setShowCommandPalette(true)}
+                  className="hidden lg:flex items-center bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 w-64 transition-colors hover:border-indigo-300 dark:hover:border-indigo-700 group"
+                >
+                  <Search size={16} className="text-slate-400 mr-2 group-hover:text-indigo-500" />
+                  <span className="text-sm text-slate-400 dark:text-slate-500 flex-1 text-left">Search...</span>
+                  <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
+                    <Command size={10} />K
+                  </kbd>
+                </button>
 
                 <div className="flex items-center gap-2 md:gap-3 relative">
                   {/* Theme Toggle - Hidden on mobile to save space */}
@@ -973,6 +999,18 @@ const App: React.FC = () => {
           pageContext={`Current page: ${currentView}. User: ${profile?.name || 'Guest'}. Role: ${userRole}. Skills: ${profile?.skills?.join(', ') || 'Not set'}. Has mentor: ${!!connectedMentor}. Is Pro: ${isPro}.`}
         />
       )}
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onNavigate={(view) => { setCurrentView(view); setShowCommandPalette(false); }}
+        onSignOut={handleSignOut}
+        userRole={userRole}
+        isPro={isPro}
+        isDark={isDark}
+        toggleTheme={toggleTheme}
+      />
     </div>
   );
 };

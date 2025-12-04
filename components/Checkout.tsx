@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreditCard, Lock, CheckCircle2, ShieldCheck, Loader2 } from 'lucide-react';
+import { Mentor } from '../types';
 
 interface CheckoutProps {
   onComplete: () => void;
@@ -10,6 +11,22 @@ interface CheckoutProps {
 const Checkout: React.FC<CheckoutProps> = ({ onComplete, onCancel }) => {
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState(1);
+  const [pendingMentor, setPendingMentor] = useState<Mentor | null>(null);
+
+  // Load pending mentor from localStorage
+  useEffect(() => {
+    const pendingMentorStr = localStorage.getItem('pending_mentor');
+    if (pendingMentorStr) {
+      try {
+        const mentor = JSON.parse(pendingMentorStr) as Mentor;
+        setPendingMentor(mentor);
+      } catch {
+        console.log('[CHECKOUT] Could not parse pending mentor');
+      }
+    }
+  }, []);
+
+  const mentorRate = pendingMentor?.rate || 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,17 +65,34 @@ const Checkout: React.FC<CheckoutProps> = ({ onComplete, onCancel }) => {
         {/* Order Summary */}
         <div className="md:col-span-1 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl h-fit border border-slate-200 dark:border-slate-800">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Order Summary</h3>
+          
+          {/* Mentor Info */}
+          {pendingMentor && (
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+              <img 
+                src={pendingMentor.imageUrl} 
+                alt={pendingMentor.name}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">{pendingMentor.name}</p>
+                <p className="text-xs text-slate-500 truncate">{pendingMentor.role}</p>
+              </div>
+            </div>
+          )}
+          
           <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
             <div>
-              <p className="font-semibold text-slate-800 dark:text-slate-200">Pro Plan</p>
-              <p className="text-xs text-slate-500">Monthly Subscription</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">Mentor Contract</p>
+              <p className="text-xs text-slate-500">Hourly Rate</p>
             </div>
-            <p className="font-bold text-slate-900 dark:text-white">$29.00</p>
+            <p className="font-bold text-slate-900 dark:text-white">${mentorRate.toFixed(2)}/hr</p>
           </div>
           <div className="flex justify-between items-center text-lg font-bold text-slate-900 dark:text-white">
-            <span>Total</span>
-            <span>$29.00</span>
+            <span>First Payment</span>
+            <span>${mentorRate.toFixed(2)}</span>
           </div>
+          <p className="text-xs text-slate-400 mt-2">You'll be charged per session with your mentor</p>
           <div className="mt-6 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             <ShieldCheck size={14} className="text-emerald-500" />
             <span>Secure 256-bit SSL Encryption</span>
@@ -123,7 +157,7 @@ const Checkout: React.FC<CheckoutProps> = ({ onComplete, onCancel }) => {
                 disabled={processing}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {processing ? <Loader2 className="animate-spin" /> : `Pay $29.00`}
+                {processing ? <Loader2 className="animate-spin" /> : `Pay $${mentorRate.toFixed(2)}`}
               </button>
               
               <p className="text-center text-xs text-slate-400">

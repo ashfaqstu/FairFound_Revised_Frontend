@@ -1,11 +1,13 @@
 
-import React, { useState, useRef } from 'react';
-import { AnalysisData, GamificationState, View } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { AnalysisData, GamificationState, View, RoadmapStep } from '../types';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip
 } from 'recharts';
-import { Trophy, TrendingUp, Target, DollarSign, Activity, Star, FileText, CheckCircle2, Lock, RefreshCw, Upload, Github, Globe, X, Loader2, CheckCircle } from 'lucide-react';
+import { Trophy, TrendingUp, Target, DollarSign, Activity, Star, FileText, CheckCircle2, Lock, RefreshCw, Upload, Github, Globe, X, Loader2, CheckCircle, BookOpen, Rocket, Clock, ArrowRight, TrendingDown } from 'lucide-react';
+import { roadmapAPI, mapStepToFrontend } from '../services/roadmapService';
+import { weeklyStatsAPI, WeeklyStats } from '../services/api';
 
 interface DashboardProps {
   analysis: AnalysisData | null;
@@ -26,9 +28,55 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
   const [portfolioUrl, setPortfolioUrl] = useState(profile?.portfolioUrl || '');
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [firstRoadmapStep, setFirstRoadmapStep] = useState<RoadmapStep | null>(null);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats | null>(null);
+
+  // Fetch first roadmap step and weekly stats
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isSignedUp) return;
+      
+      // Fetch roadmap step
+      try {
+        const steps = await roadmapAPI.getRoadmap();
+        if (steps.length > 0) {
+          const inProgressStep = steps.find(s => s.status === 'in-progress') || steps[0];
+          setFirstRoadmapStep(mapStepToFrontend(inProgressStep));
+        }
+      } catch (err) {
+        console.log('[DASHBOARD] No roadmap steps found');
+      }
+      
+      // Fetch weekly stats
+      try {
+        const stats = await weeklyStatsAPI.getStats();
+        setWeeklyStats(stats);
+      } catch (err) {
+        console.log('[DASHBOARD] Could not fetch weekly stats');
+      }
+    };
+    fetchData();
+  }, [isSignedUp]);
+
+  // Legacy fetch - keeping for backwards compatibility
+  useEffect(() => {
+    const fetchFirstStep = async () => {
+      if (!isSignedUp || firstRoadmapStep) return;
+      try {
+        const steps = await roadmapAPI.getRoadmap();
+        if (steps.length > 0) {
+          const inProgressStep = steps.find(s => s.status === 'in-progress') || steps[0];
+          setFirstRoadmapStep(mapStepToFrontend(inProgressStep));
+        }
+      } catch (err) {
+        console.log('[DASHBOARD] No roadmap steps found');
+      }
+    };
+    fetchFirstStep();
+  }, [isSignedUp]);
 
   // Update form when profile changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile) {
       setGithubUrl(profile.githubUsername || '');
       setPortfolioUrl(profile.portfolioUrl || '');
@@ -349,7 +397,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
             <div className="flex justify-between items-start">
                 <div>
                     <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Global Readiness</p>
-                    <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white mt-1 md:mt-2">{analysis.globalReadinessScore}/100</h3>
+                    <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white mt-1 md:mt-2">{Number(analysis.globalReadinessScore).toFixed(2)}/100</h3>
                 </div>
                 <div className="p-1.5 md:p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
                     <Trophy size={20} className="md:w-6 md:h-6" />
@@ -499,23 +547,33 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
                 </div>
                 <div>
                     <h3 className="text-base md:text-xl font-bold">Weekly Report Card</h3>
-                    <p className="text-indigo-200 text-xs md:text-sm">Oct 12 - Oct 19</p>
+                    <p className="text-indigo-200 text-xs md:text-sm">{weeklyStats?.date_range || 'Loading...'}</p>
                 </div>
             </div>
             
             <div className="flex gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-start">
                 <div className="text-center">
                     <p className="text-indigo-200 text-[10px] md:text-xs uppercase font-semibold">Skills</p>
-                    <p className="text-lg md:text-2xl font-bold">+3</p>
+                    <p className="text-lg md:text-2xl font-bold">+{weeklyStats?.skills_learned || 0}</p>
                 </div>
                 <div className="text-center">
                     <p className="text-indigo-200 text-[10px] md:text-xs uppercase font-semibold">Views</p>
-                    <p className="text-lg md:text-2xl font-bold">142</p>
+                    <p className="text-lg md:text-2xl font-bold">{weeklyStats?.profile_views || 0}</p>
                 </div>
                 <div className="text-center">
                     <p className="text-indigo-200 text-[10px] md:text-xs uppercase font-semibold">Rank</p>
-                    <div className="text-lg md:text-2xl font-bold flex items-center justify-center gap-1 text-emerald-300">
-                        <TrendingUp size={14} className="md:w-4 md:h-4" /> +5%
+                    <div className={`text-lg md:text-2xl font-bold flex items-center justify-center gap-1 ${
+                      (weeklyStats?.rank_change || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'
+                    }`}>
+                        {(weeklyStats?.rank_change || 0) >= 0 ? (
+                          <TrendingUp size={14} className="md:w-4 md:h-4" />
+                        ) : (
+                          <TrendingDown size={14} className="md:w-4 md:h-4" />
+                        )}
+                        {weeklyStats?.rank_change !== undefined 
+                          ? `${weeklyStats.rank_change >= 0 ? '+' : ''}${weeklyStats.rank_change}%`
+                          : '0%'
+                        }
                     </div>
                 </div>
             </div>
@@ -531,40 +589,123 @@ const Dashboard: React.FC<DashboardProps> = ({ analysis, gamification, isDark, o
 
       {/* Quick Recommendations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <LockedSection title="Unlock skill gap analysis">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
+        {/* Current Roadmap Step Card */}
+        <LockedSection title="Unlock your roadmap">
+          {firstRoadmapStep ? (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-700 transition-all hover:shadow-md">
               <div className="relative z-10">
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                      <Target size={18} className="text-indigo-500 dark:text-indigo-400" />
-                      Priority Skill Gap: {analysis.skillGaps[0]}
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
-                     Based on recent job postings in your niche, mastering this skill could increase your profile visibility by 35%.
-                  </p>
-                  <button 
-                    onClick={() => onNavigate(View.ROADMAP)}
-                    className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
-                  >
-                      Add to Roadmap <TrendingUp size={14} />
-                  </button>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                    firstRoadmapStep.status === 'in-progress' 
+                      ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' 
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}>
+                    {firstRoadmapStep.status === 'in-progress' ? '🚀 In Progress' : '📋 Up Next'}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Clock size={12} /> {firstRoadmapStep.duration}
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <BookOpen size={18} className="text-indigo-600 dark:text-indigo-400" />
+                    {firstRoadmapStep.title}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm leading-relaxed line-clamp-2">
+                   {firstRoadmapStep.description}
+                </p>
+                <button 
+                  onClick={() => onNavigate(View.ROADMAP)}
+                  className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                >
+                    Continue Learning <ArrowRight size={14} />
+                </button>
               </div>
-          </div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden hover:shadow-md transition-all">
+              {/* Subtle gradient accent */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center">
+                    <Rocket size={24} className="text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <span className="px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/40 rounded-full text-xs text-indigo-700 dark:text-indigo-300 font-medium">
+                    ✨ AI-Powered
+                  </span>
+                </div>
+                
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                  Start Your Learning Journey
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm leading-relaxed">
+                  Get a personalized roadmap with curated resources, tasks, and milestones tailored to your skill gaps.
+                </p>
+                
+                <div className="flex flex-wrap gap-2 mb-5">
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                    📚 Resources
+                  </span>
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                    ✅ Tasks
+                  </span>
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                    🎯 Progress
+                  </span>
+                </div>
+                
+                <button 
+                  onClick={() => onNavigate(View.ROADMAP)}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white py-2.5 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  Generate My Roadmap <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </LockedSection>
 
-        <LockedSection title="Unlock action items">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400" />
-                  Immediate Actions
-               </h3>
-               <ul className="space-y-3">
-                  {analysis.weaknesses.slice(0, 3).map((weakness, i) => (
-                      <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
-                          <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
-                          {weakness}
-                      </li>
-                  ))}
-               </ul>
+        {/* Find a Mentor Card */}
+        <LockedSection title="Unlock mentorship">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden hover:shadow-md transition-all">
+              {/* Subtle gradient accent */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/40 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl">👨‍🏫</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Get Expert Guidance</h3>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">1-on-1 Mentorship</p>
+                  </div>
+                </div>
+                
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 leading-relaxed">
+                  Accelerate your career with personalized guidance from experienced professionals.
+                </p>
+                
+                <div className="flex flex-wrap gap-2 mb-5">
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                    ✓ Code Reviews
+                  </span>
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                    ✓ Career Advice
+                  </span>
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                    ✓ Sessions
+                  </span>
+                </div>
+                
+                <button 
+                  onClick={() => onNavigate(View.MENTORS)}
+                  className="w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white py-2.5 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  Browse Mentors <ArrowRight size={16} />
+                </button>
+              </div>
           </div>
         </LockedSection>
       </div>

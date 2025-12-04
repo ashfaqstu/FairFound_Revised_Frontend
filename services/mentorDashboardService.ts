@@ -33,6 +33,12 @@ export interface MenteeData {
   analysis?: AnalysisData;
 }
 
+export interface ResourceData {
+  title: string;
+  url: string;
+  type: 'docs' | 'youtube' | 'course' | 'link';
+}
+
 export interface RoadmapStepData {
   id: number;
   title: string;
@@ -44,6 +50,7 @@ export interface RoadmapStepData {
   mentor_notes: string;
   order: number;
   tasks: TaskData[];
+  resources?: ResourceData[];
   created_at: string;
 }
 
@@ -419,6 +426,7 @@ export const mentorDashboardAPI = {
     duration: string;
     type: string;
     tasks: { title: string; description: string }[];
+    resources?: { title: string; url: string; type: string }[];
   }): Promise<RoadmapStepData> => {
     console.log('[MENTOR] Creating step with tasks for mentee:', menteeUserId);
     const response = await fetch(`${API_BASE_URL}/mentees/${menteeUserId}/create-step-with-tasks/`, {
@@ -435,7 +443,7 @@ export const mentorDashboardAPI = {
 
   // ============ AVAILABILITY ============
 
-  // Get mentor's availability settings
+  // Get mentor's availability settings (for mentors)
   getAvailability: async (): Promise<AvailabilityData> => {
     console.log('[MENTOR] Fetching availability');
     const response = await fetch(`${API_BASE_URL}/mentors/availability/`, {
@@ -443,6 +451,18 @@ export const mentorDashboardAPI = {
     });
     if (!response.ok) {
       throw new Error('Failed to fetch availability');
+    }
+    return response.json();
+  },
+
+  // Get a specific mentor's availability (for freelancers booking sessions)
+  getMentorAvailability: async (mentorId: number): Promise<AvailabilityData> => {
+    console.log('[MENTOR] Fetching mentor availability:', mentorId);
+    const response = await fetch(`${API_BASE_URL}/mentors/${mentorId}/availability/`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch mentor availability');
     }
     return response.json();
   },
@@ -524,6 +544,8 @@ export const mapStepToFrontend = (step: RoadmapStepData) => ({
     completed: t.status === 'completed',
     dueDate: t.due_date,
   })) || [],
+  // Include learning resources
+  resources: step.resources || [],
 });
 
 export const mapTaskToFrontend = (task: TaskData) => ({
