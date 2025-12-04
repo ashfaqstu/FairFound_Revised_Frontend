@@ -56,6 +56,9 @@ async function apiRequest<T>(
       if (!retryResponse.ok) {
         throw new Error(`API Error: ${retryResponse.status}`);
       }
+      if (retryResponse.status === 204) {
+        return undefined as T;
+      }
       return retryResponse.json();
     } else {
       clearTokens();
@@ -74,6 +77,11 @@ async function apiRequest<T>(
       }
     }
     throw new Error(error.detail || error.message || error.error || `API Error: ${response.status}`);
+  }
+
+  // Handle 204 No Content responses (e.g., DELETE requests)
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json();
@@ -646,7 +654,7 @@ export const agentsAPI = {
 
 export interface AIInsight {
   id: number;
-  insight_type: 'market_trend' | 'skill_gap' | 'career_advice' | 'learning_path' | 'salary_insight' | 'project_suggestion';
+  insight_type: 'market_trend' | 'skill_gap' | 'career_advice' | 'learning_path' | 'salary_insight' | 'project_suggestion' | 'swot_analysis' | 'salary_comparison' | 'skill_demand';
   title: string;
   content: string;
   metadata: Record<string, unknown>;
@@ -694,6 +702,28 @@ export const insightsAPI = {
   // Delete insight
   deleteInsight: async (insightId: number): Promise<void> => {
     return apiRequest(`/agents/insights/${insightId}/`, { method: 'DELETE' });
+  },
+};
+
+// ============================================
+// WEEKLY STATS API
+// ============================================
+
+export interface WeeklyStats {
+  date_range: string;
+  skills_learned: number;
+  tasks_completed: number;
+  profile_views: number;
+  rank_change: number;
+  current_score: number;
+  percentile: number;
+  week_start: string;
+  week_end: string;
+}
+
+export const weeklyStatsAPI = {
+  getStats: async (): Promise<WeeklyStats> => {
+    return apiRequest('/agents/weekly-stats/');
   },
 };
 

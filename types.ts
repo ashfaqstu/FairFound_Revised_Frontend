@@ -7,11 +7,8 @@ export enum View {
   DASHBOARD = 'DASHBOARD',
   ROADMAP = 'ROADMAP',
   MENTORS = 'MENTORS',
-  MY_MENTOR = 'MY_MENTOR', // Freelancer's connected mentor page
+  MY_MENTOR = 'MY_MENTOR',
   INSIGHTS = 'INSIGHTS',
-  PORTFOLIO = 'PORTFOLIO',
-  PROPOSALS = 'PROPOSALS',
-  SENTIMENT = 'SENTIMENT', // Sentiment Analysis Tool
   COMMUNITY = 'COMMUNITY',
   PRICING = 'PRICING',
   PROFILE = 'PROFILE',
@@ -118,15 +115,7 @@ export interface GamificationState {
   badges: string[];
 }
 
-export interface PortfolioContent {
-  tagline: string;
-  about: string;
-  projects: {
-    title: string;
-    description: string;
-    tags: string[];
-  }[];
-}
+
 
 export interface Notification {
   id: number;

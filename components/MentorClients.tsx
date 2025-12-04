@@ -19,7 +19,7 @@ const MentorClients: React.FC = () => {
   const [saving, setSaving] = useState(false);
   
   // Form states
-  const [newStep, setNewStep] = useState({ title: '', description: '', duration: '1 week', type: 'skill' as const });
+  const [newStep, setNewStep] = useState({ title: '', description: '', duration: '1 week', type: 'skill' as 'skill' | 'project' | 'branding' });
   const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '', stepId: '' });
   
   // Edit states
@@ -27,11 +27,14 @@ const MentorClients: React.FC = () => {
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [editingStep, setEditingStep] = useState<RoadmapStep | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [editStepForm, setEditStepForm] = useState({ title: '', description: '', duration: '1 week', type: 'skill' as const });
+  const [editStepForm, setEditStepForm] = useState({ title: '', description: '', duration: '1 week', type: 'skill' as 'skill' | 'project' | 'branding' });
   const [editTaskForm, setEditTaskForm] = useState({ title: '', description: '', dueDate: '', stepId: '' });
   
   // AI Generated Step state (for populating Add Step modal)
-  const [aiGeneratedStep, setAiGeneratedStep] = useState<{ title: string; description: string; duration: string; type: 'skill' | 'project' | 'branding'; tasks: { title: string; description: string }[] } | null>(null);
+  const [aiGeneratedStep, setAiGeneratedStep] = useState<{ title: string; description: string; duration: string; type: 'skill' | 'project' | 'branding'; tasks: { title: string; description: string }[]; resources?: { title: string; url: string; type: string }[] } | null>(null);
+  
+  // Manual resources for Add Step modal
+  const [stepResources, setStepResources] = useState<{ title: string; url: string; type: 'docs' | 'youtube' | 'course' | 'link' }[]>([]);
 
   // Bulk notification states
   const [showBulkNotificationModal, setShowBulkNotificationModal] = useState(false);
@@ -209,7 +212,18 @@ const MentorClients: React.FC = () => {
     if (!selectedMentee || !newStep.title) return;
     try {
       setSaving(true);
-      // If we have AI-generated tasks, create step with tasks
+      
+      // Combine AI-generated resources with manually added resources
+      const allResources: { title: string; url: string; type: 'docs' | 'youtube' | 'course' | 'link' }[] = [
+        ...(aiGeneratedStep?.resources || []).map(r => ({
+          title: r.title,
+          url: r.url,
+          type: (r.type as 'docs' | 'youtube' | 'course' | 'link') || 'link'
+        })),
+        ...stepResources.filter(r => r.title && r.url)
+      ];
+      
+      // If we have AI-generated tasks, create step with tasks and resources
       if (aiGeneratedStep && aiGeneratedStep.tasks && aiGeneratedStep.tasks.length > 0) {
         await mentorDashboardAPI.createStepWithTasks(getMenteeUserId(selectedMentee), {
           title: newStep.title,
@@ -217,19 +231,22 @@ const MentorClients: React.FC = () => {
           duration: newStep.duration,
           type: newStep.type,
           tasks: aiGeneratedStep.tasks,
+          resources: allResources,
         });
       } else {
-        // Otherwise just create the step without tasks
+        // Create step with manual resources (if any)
         await mentorDashboardAPI.createStep(getMenteeUserId(selectedMentee), {
           title: newStep.title,
           description: newStep.description,
           duration: newStep.duration,
           type: newStep.type as any,
           status: 'pending',
+          resources: allResources.length > 0 ? allResources : undefined,
         });
       }
       await refreshMentee(selectedMentee.id);
       setNewStep({ title: '', description: '', duration: '1 week', type: 'skill' });
+      setStepResources([]); // Clear manual resources
       setAiGeneratedStep(null);
       setShowAddStepModal(false);
     } catch (err) {
@@ -934,7 +951,7 @@ const MentorClients: React.FC = () => {
                 {aiGeneratedStep && <Sparkles size={18} className="text-purple-600" />}
                 {aiGeneratedStep ? 'AI Generated Step - Review & Edit' : 'Add Roadmap Step'}
               </h3>
-              <button onClick={() => { setShowAddStepModal(false); setAiGeneratedStep(null); setNewStep({ title: '', description: '', duration: '1 week', type: 'skill' }); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              <button onClick={() => { setShowAddStepModal(false); setAiGeneratedStep(null); setNewStep({ title: '', description: '', duration: '1 week', type: 'skill' }); setStepResources([]); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
               {aiGeneratedStep && (
@@ -1025,6 +1042,110 @@ const MentorClients: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* AI Generated Resources Section */}
+              {aiGeneratedStep && aiGeneratedStep.resources && aiGeneratedStep.resources.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                    📚 AI Resources ({aiGeneratedStep.resources.length})
+                  </label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {aiGeneratedStep.resources.map((resource, index) => (
+                      <div key={index} className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center gap-2">
+                        <span className="text-xs">{resource.type === 'youtube' ? '🎬' : resource.type === 'docs' ? '📄' : resource.type === 'course' ? '🎓' : '🔗'}</span>
+                        <input
+                          type="text"
+                          value={resource.title}
+                          onChange={(e) => {
+                            const newResources = [...(aiGeneratedStep.resources || [])];
+                            newResources[index] = { ...newResources[index], title: e.target.value };
+                            setAiGeneratedStep({ ...aiGeneratedStep, resources: newResources });
+                          }}
+                          className="flex-1 px-2 py-1 text-xs bg-transparent text-slate-700 dark:text-slate-300 outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            const newResources = aiGeneratedStep.resources?.filter((_, i) => i !== index) || [];
+                            setAiGeneratedStep({ ...aiGeneratedStep, resources: newResources });
+                          }}
+                          className="text-red-400 hover:text-red-600"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Resources Section */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-2">📚 Learning Resources</span>
+                  <button
+                    type="button"
+                    onClick={() => setStepResources([...stepResources, { title: '', url: '', type: 'link' }])}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                  >
+                    <Plus size={12} /> Add Resource
+                  </button>
+                </label>
+                {stepResources.length > 0 && (
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {stepResources.map((resource, index) => (
+                      <div key={index} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={resource.title}
+                            onChange={(e) => {
+                              const newResources = [...stepResources];
+                              newResources[index] = { ...newResources[index], title: e.target.value };
+                              setStepResources(newResources);
+                            }}
+                            placeholder="Resource title"
+                            className="flex-1 px-2 py-1 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                          <select
+                            value={resource.type}
+                            onChange={(e) => {
+                              const newResources = [...stepResources];
+                              newResources[index] = { ...newResources[index], type: e.target.value as any };
+                              setStepResources(newResources);
+                            }}
+                            className="px-2 py-1 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-300 outline-none"
+                          >
+                            <option value="link">🔗 Link</option>
+                            <option value="docs">📄 Docs</option>
+                            <option value="youtube">🎬 YouTube</option>
+                            <option value="course">🎓 Course</option>
+                          </select>
+                          <button
+                            onClick={() => setStepResources(stepResources.filter((_, i) => i !== index))}
+                            className="text-red-400 hover:text-red-600"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <input
+                          type="url"
+                          value={resource.url}
+                          onChange={(e) => {
+                            const newResources = [...stepResources];
+                            newResources[index] = { ...newResources[index], url: e.target.value };
+                            setStepResources(newResources);
+                          }}
+                          placeholder="https://..."
+                          className="w-full px-2 py-1 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {stepResources.length === 0 && !aiGeneratedStep?.resources?.length && (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 italic">No resources added. Click "Add Resource" to include learning materials.</p>
+                )}
+              </div>
 
               <button
                 onClick={handleAddStepWithTasks}
